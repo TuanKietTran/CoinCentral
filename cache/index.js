@@ -1,8 +1,8 @@
-import 'dotenv/config'
 import express from 'express'
 import bodyParser from 'body-parser'
 import api from './routes/api.js'
 import cache from './routes/cache.js'
+import { PORT } from './config.js'
 
 // Create the express app
 const app = express()
@@ -32,4 +32,4 @@ app.use(function fiveHundredHandler (err, req, res, next) {
 
 
 // Start server
-app.listen(process.env.PORT)
+app.listen(PORT)

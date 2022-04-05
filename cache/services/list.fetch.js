@@ -1,10 +1,6 @@
 import axios from 'axios'
-import path from 'path'
-import dotenv from 'dotenv'
-const __dirname = path.resolve();
-dotenv.config({ path: path.resolve(__dirname, '.env') })
+import { API_KEY } from '../config.js';
 
-import {COINS_API_URL} from '../config.js'
 
 async function fetchPOST(url, input) {
 	try {
@@ -14,7 +10,7 @@ async function fetchPOST(url, input) {
 			data: input,
 			headers: {
 				'Content-Type': 'application/json',
-				'x-api-key': process.env.COIN_API_KEY
+				'x-api-key': API_KEY
 			}
 		})
 		const data = response.data

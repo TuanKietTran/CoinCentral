@@ -1,3 +1,6 @@
+import 'dotenv/config'
+export const PORT=process.env.PORT
+export const API_KEY=process.env.COIN_API_KEY
 export const COINS_API_URL='https://api.livecoinwatch.com'
 export const FIATS='/fiats/all'
 export const COINS_SINGLE='/coins/single'
