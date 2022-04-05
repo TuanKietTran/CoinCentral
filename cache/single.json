@@ -1,0 +1,32 @@
+{
+  "name": "Bitcoin",
+  "symbol": "₿",
+  "rank": 1,
+  "age": 4835,
+  "color": "#fa9e32",
+  "png32": "https://lcw.nyc3.cdn.digitaloceanspaces.com/production/currencies/32/btc.png",
+  "png64": "https://lcw.nyc3.cdn.digitaloceanspaces.com/production/currencies/64/btc.png",
+  "webp32": "https://lcw.nyc3.cdn.digitaloceanspaces.com/production/currencies/32/btc.webp",
+  "webp64": "https://lcw.nyc3.cdn.digitaloceanspaces.com/production/currencies/64/btc.webp",
+  "exchanges": 184,
+  "markets": 4359,
+  "pairs": 1523,
+  "allTimeHighUSD": 68780.77475755227,
+  "circulatingSupply": 18999112,
+  "totalSupply": 18999112,
+  "maxSupply": 21000000,
+  "links": {
+      "website": "https://bitcoin.org/",
+      "whitepaper": "https://bitcoin.org/bitcoin.pdf",
+      "twitter": null,
+      "reddit": "https://reddit.com/r/bitcoin",
+      "telegram": null,
+      "discord": null,
+      "medium": null,
+      "instagram": null
+  },
+  "rate": 46017.98379828117,
+  "volume": 21122982821,
+  "cap": 874300828198,
+  "liquidity": 1393438146
+}
