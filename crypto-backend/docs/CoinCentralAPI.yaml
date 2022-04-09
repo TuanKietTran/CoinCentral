@@ -1,0 +1,115 @@
+openapi: 3.0.0
+info:
+  title: CoinCentral API
+  description: blah blah
+  version: 0.0.1
+
+servers:
+  - url: http://localhost
+    description: Development server
+
+paths:
+  /coins/supported:
+    get:
+      summary: List of supported coins
+      responses:
+        200:
+          description: Fetch supported list succesfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SupportedCoin'
+        500:
+          description: Internal Server Error
+
+  /status:
+    get:
+      summary: Allow client to test for connection
+      responses:
+        200:
+          description: Connect succesfully
+        default:
+          description: An error has occurred
+
+  /users:
+    get:
+      summary: Gets info of user using userId
+      parameters:
+        - name: userId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Fetch user info successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        400:
+          description: Missing `userId` in request query
+        500:
+          description: Internal Server Error
+    post:
+      summary: Creates a new user
+      parameters:
+        - name: name
+          in: query
+          schema:
+            type: string
+      responses:
+        200:
+          description: Create user successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    type: string
+                    format: uuid
+                    example: 705e4dcb-3ecd-24f3-3a35-3e926e4bded5
+        400:
+          description: Missing `name` in request query
+    delete:
+      summary: Delete an existing user
+      parameters:
+        - name: userId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Delete user successfully
+        400:
+          description: Missing `userId` in request query
+        404:
+          description: Can't find user with `userId`
+        500:
+          description: Internal Server Error
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "John Doe"
+    SupportedCoin:
+      type: object
+      properties:
+        code:
+          type: string
+          example: "ETH"
+        name:
+          type: string
+          example: "Ethereum"
+
