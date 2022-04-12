@@ -9,21 +9,6 @@ servers:
     description: Development server
 
 paths:
-  /coins/supported:
-    get:
-      summary: List of supported coins
-      responses:
-        200:
-          description: Fetch supported list succesfully
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/SupportedCoin'
-        500:
-          description: Internal Server Error
-
   /status:
     get:
       summary: Allow client to test for connection
@@ -33,31 +18,49 @@ paths:
         default:
           description: An error has occurred
 
-  /users:
+  /coins:
     get:
-      summary: Gets info of user using userId
-      parameters:
-        - name: userId
-          in: query
-          schema:
-            type: string
-            format: uuid
+      summary: Get list of supported Coin or Coin's info
       responses:
         200:
-          description: Fetch user info successfully
+          description: Fetch supported list succesfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
-        400:
-          description: Missing `userId` in request query
+                type: array
+                items:
+                  type: string
+                  example: "ETH"
         500:
           description: Internal Server Error
+
+  /coins/{code}:
+    get:
+      summary: Get info about Coin
+      parameters:
+        - name: code
+          in: path
+          schema:
+            type: string
+            example: "ETH"
+      responses:
+        200:
+          description: Get info of Coin successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Coin'
+        404:
+          description: Coin not found
+        500:
+          description: Internal Server Error
+
+  /users:
     post:
-      summary: Creates a new user
+      summary: Creates a new User
       parameters:
         - name: name
-          in: query
+          in: path
           schema:
             type: string
       responses:
@@ -74,11 +77,32 @@ paths:
                     example: 705e4dcb-3ecd-24f3-3a35-3e926e4bded5
         400:
           description: Missing `name` in request query
+
+  /users/{userId}:
+    get:
+      summary: Get User's info
+      parameters:
+        - name: userId
+          in: path
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Fetch User info successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        400:
+          description: Missing `userId` in request query
+        500:
+          description: Internal Server Error
     delete:
       summary: Delete an existing user
       parameters:
         - name: userId
-          in: query
+          in: path
           schema:
             type: string
             format: uuid
@@ -91,6 +115,52 @@ paths:
           description: Can't find user with `userId`
         500:
           description: Internal Server Error
+
+  /users/{userId}/notifications/periods:
+    post:
+      summary: Create new Notification for User
+      parameters:
+        - name: duration
+          in: query
+          schema:
+            type: string
+            description: Time between Notification
+            example: 2h45m
+      responses:
+        200:
+          description: Create Notification successfully
+        500:
+          description: Internal Server Error
+    get:
+      summary: Get all User's created Notifications
+      responses:
+        200:
+          description: Get list of Notifications successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+    delete:
+      summary: Remove Notification
+      parameters:
+        - name: id
+          in: query
+          schema:
+            type: string
+            description: Notification's ID
+            example: 624fae88e627f3fb347f3445
+      responses:
+        200:
+          description: Delete Notification successfully
+        404:
+          description: Notification not found
+        500:
+          description: Internal Server Error
+
+
+
 
 components:
   schemas:
@@ -112,4 +182,32 @@ components:
         name:
           type: string
           example: "Ethereum"
+    Coin:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Coin's own code
+          example: "ETH"
+        name:
+          type: string
+          description: Coin's name
+          example: "Ethereum"
+        rate:
+          type: number
+          format: double
+          description: Coin's price (rate)
+          example: 3205.803416110673
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Notification's ID
+          example: 624fae88e627f3fb347f3445
+        duration:
+          type: string
+          description: Duration between Notification
+          example: 2h45m
+
 
