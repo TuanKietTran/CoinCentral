@@ -6,6 +6,7 @@ import (
 	"crypto-backend/handlers"
 	"crypto-backend/utils"
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 	"log"
 	"net/http"
 	"os"
@@ -15,9 +16,13 @@ import (
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Panicf("Can't load .env file, err: %v", err)
+	}
 	config := utils.ReadConfigFile("config/config.yml")
 
-	db.StartMongoClient(config, false)
+	db.StartMongoClient(config, true)
 	defer db.StopMongoClient()
 
 	// Start goroutine of fetching crypto
@@ -27,13 +32,14 @@ func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/status", handlers.StatusHandler)
 
-	// Users routes
-	router.HandleFunc("/users", handlers.GetUserHandler).Methods("GET")
-	router.HandleFunc("/users", handlers.CreateUserHandler).Methods("POST")
-	router.HandleFunc("/users", handlers.DeleteUserHandler).Methods("DELETE")
-
 	// Coins routes
-	router.HandleFunc("/coins/supported", handlers.SupportedCoinsHandler).Methods("GET")
+	router.HandleFunc("/coins", handlers.SupportedCoinsHandler).Methods("GET")
+	router.HandleFunc("/coins/{code}", handlers.CoinCodeHandler).Methods("GET")
+
+	// Users routes
+	router.HandleFunc("/users", handlers.CreateUserHandler).Methods("POST")
+	router.HandleFunc("/users/{userId}", handlers.GetUserHandler).Methods("GET")
+	router.HandleFunc("/users/{userId}", handlers.DeleteUserHandler).Methods("DELETE")
 
 	server := http.Server{
 		Handler:      router,

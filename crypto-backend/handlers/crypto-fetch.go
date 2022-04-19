@@ -15,26 +15,25 @@ import (
 	"time"
 )
 
-var apiKey, apiExists = os.LookupEnv("APIKEY")
-
 func FetchCrypto(config *utils.Config) {
+	var apiKey, apiExists = os.LookupEnv("APIKEY")
 	if !apiExists {
-		log.Panicln("$APIKEY must exists")
+		log.Panicln("$APIKEY not exists")
 	}
 
-	fetchRankAndInsert(config)
+	fetchRankAndInsert(config, apiKey)
 
 	ticker := time.NewTicker(time.Duration(config.Coins.TimeBetweenFetch) * time.Second)
 	for {
 		select {
 		case <-ticker.C:
-			fetchRankAndInsert(config)
+			fetchRankAndInsert(config, apiKey)
 		}
 	}
 
 }
 
-func fetchRankAndInsert(config *utils.Config) {
+func fetchRankAndInsert(config *utils.Config, apiKey string) {
 	log.Println("Updating Coins collection")
 
 	reqPayload := strings.NewReader(fmt.Sprintf(`{
@@ -62,20 +61,11 @@ func fetchRankAndInsert(config *utils.Config) {
 		log.Panicf("Can't fetch Live Coin Watch response, %v", err)
 	}
 
-	//respBody, err := io.ReadAll(resp.Body)
-	//if err != nil {
-	//	log.Panicf("Can't read Live Coin Watch result, %v", err)
-	//}
-
 	var coinList []models.Coin
 	if err = json.NewDecoder(resp.Body).Decode(&coinList); err != nil {
 		log.Panicf("Can't parse Live Coin Watch result, %v", err)
 
 	}
-
-	//if err = json.Unmarshal(respBody, &coinList); err != nil {
-	//	log.Panicf("Can't parse Live Coin Watch result, %v", err)
-	//}
 
 	// Create context
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

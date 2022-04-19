@@ -1,5 +1,4 @@
 mongoDB:
-  uri: "mongodb://localhost:27017"
 
 coins:
   numOfSupportingCoins: 50  # Real number of supported coins

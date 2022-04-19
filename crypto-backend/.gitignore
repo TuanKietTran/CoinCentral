@@ -152,3 +152,6 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# .env files are also ignored
+!/.env

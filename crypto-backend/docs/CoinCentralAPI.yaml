@@ -58,11 +58,18 @@ paths:
   /users:
     post:
       summary: Creates a new User
-      parameters:
-        - name: name
-          in: path
-          schema:
-            type: string
+      requestBody:
+        description: Infos about User
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Name of User
+                  example: John Doe
       responses:
         200:
           description: Create user successfully
@@ -95,7 +102,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
         400:
-          description: Missing `userId` in request query
+          description: Missing `userId` in request path
+        404:
+          description: User not found
         500:
           description: Internal Server Error
     delete:
@@ -116,7 +125,7 @@ paths:
         500:
           description: Internal Server Error
 
-  /users/{userId}/notifications/periods:
+  /users/{userId}/notifications/time:
     post:
       summary: Create new Notification for User
       parameters:
@@ -159,8 +168,25 @@ paths:
         500:
           description: Internal Server Error
 
-
-
+#  /webhook:
+#    post:
+#      summary: Subscribe to Webhook
+#      requestBody:
+#        required: True
+#        content:
+#          application/json:
+#            schema:
+#              type: object
+#              properties:
+#                callbackUrl:
+#                  type: string
+#                  format: uri
+#                  example: https://myserver.com/send/callback/here
+#              required:
+#                - callbackUrl
+#      responses:
+#        201:
+#          description: Webhook created
 
 components:
   schemas:
@@ -173,15 +199,6 @@ components:
         name:
           type: string
           example: "John Doe"
-    SupportedCoin:
-      type: object
-      properties:
-        code:
-          type: string
-          example: "ETH"
-        name:
-          type: string
-          example: "Ethereum"
     Coin:
       type: object
       properties:

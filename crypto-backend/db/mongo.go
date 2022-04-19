@@ -32,7 +32,11 @@ func StartMongoClient(config *utils.Config, generateCollection bool) {
 		This function start Client connected to MongoDB
 		If generateCollection == true, also generate the required collections. Default is false
 	*/
-	MongoClient, err = mongo.Connect(mongoCtx, options.Client().ApplyURI(config.MongoDB.URI))
+	mongoUri, mongoUriExists := os.LookupEnv("MONGO_URI")
+	if !mongoUriExists {
+		log.Panicf("$MONGO_URI not exists")
+	}
+	MongoClient, err = mongo.Connect(mongoCtx, options.Client().ApplyURI(mongoUri))
 	if err != nil {
 		log.Fatalf("Can't connect to MongoDB, %v", err)
 	}

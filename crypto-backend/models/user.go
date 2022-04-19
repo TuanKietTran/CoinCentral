@@ -3,7 +3,7 @@ package models
 type User struct {
 	UserId        string      `bson:"_id" json:"userId"`
 	Name          string      `bson:"name" json:"name"`
-	ThresholdList []Threshold `bson:"thresholdList" json:"thresholdList"`
+	ThresholdList []Threshold `bson:"thresholdList" json:"-"`
 }
 
 type Threshold struct {
