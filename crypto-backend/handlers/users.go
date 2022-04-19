@@ -8,12 +8,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/gorilla/mux"
-	"go.mongodb.org/mongo-driver/bson"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/gorilla/mux"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func GetUserHandler(writer http.ResponseWriter, req *http.Request) {
@@ -32,7 +34,7 @@ func GetUserHandler(writer http.ResponseWriter, req *http.Request) {
 	}
 
 	// Search for user with userId
-	cursor, err := collection.Find(ctx, bson.D{{"_id", userId}})
+	cursor, err := collection.Find(ctx, bson.D{primitive.E{Key: "_id", Value: userId}})
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		utils.LogInternalError(req, err)
@@ -122,7 +124,7 @@ func DeleteUserHandler(writer http.ResponseWriter, req *http.Request) {
 	}
 
 	// Search for user with userId
-	deleteResult, err := collection.DeleteOne(ctx, bson.D{{"_id", userId}})
+	deleteResult, err := collection.DeleteOne(ctx, bson.D{primitive.E{Key: "_id", Value: userId}})
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		utils.LogInternalError(req, err)

@@ -5,14 +5,15 @@ import (
 	"crypto-backend/db"
 	"crypto-backend/handlers"
 	"crypto-backend/utils"
-	"github.com/gorilla/mux"
-	"github.com/joho/godotenv"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -30,7 +31,7 @@ func main() {
 
 	// Setup router
 	router := mux.NewRouter()
-	router.HandleFunc("/status", handlers.StatusHandler)
+	router.HandleFunc("/status", handlers.StatusHandler).Methods("GET")
 
 	// Coins routes
 	router.HandleFunc("/coins", handlers.SupportedCoinsHandler).Methods("GET")
