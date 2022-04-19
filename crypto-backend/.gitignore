@@ -154,4 +154,4 @@ Temporary Items
 .apdisk
 
 # .env files are also ignored
-!/.env
+.env
