@@ -44,6 +44,7 @@ func HandleVerification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Printf("Verify Token %s", verifyToken)
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(r.URL.Query().Get("hub.challenge")))
 }

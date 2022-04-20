@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"go-facebook-bot/pkg/fb"
 	"log"
 	"net/http"
@@ -13,7 +12,7 @@ func main() {
 	http.HandleFunc("/", homepageHandler)
 
 	// port := ":4000"
-	fmt.Println(os.Getenv("PORT"))
+	log.Println(os.Getenv("PORT"))
 	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), nil))
 }
 
