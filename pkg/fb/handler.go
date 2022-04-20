@@ -38,8 +38,9 @@ func HandleMessenger(w http.ResponseWriter, r *http.Request) {
 
 // HandleVerification handles the verification request from Facebook.
 func HandleVerification(w http.ResponseWriter, r *http.Request) {
-	log.Printf("Verify Token %s", r.URL.Query().Get("hub.verify_token"))
-	if verifyToken != r.URL.Query().Get("hub.verify_token") {
+	log.Printf("Verify Token %v", r)
+	q := r.URL.Query()
+	if verifyToken != q.Get("hub.verify_token") {
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write(nil)
 		return
