@@ -10,7 +10,8 @@ import (
 )
 
 const (
-	uriSendMessage = "https://graph.facebook.com/v13.0/me/messages"
+	// uriSendMessage = "https://graph.facebook.com/v13.0/me/messages"
+	uriSendMessage = "https://graph.facebook.com/v2.6/me/messages"
 
 	defaultRequestTimeout = 10 * time.Second
 )
@@ -66,9 +67,10 @@ func callAPI(ctx context.Context, reqURI string, reqBody SendMessageRequest) err
 	}
 
 	resp := APIResponse{
-		MessageID:   reqBody.Message.Mid,
-		RecipientID: reqBody.RecipientID.ID,
+		// MessageID:   reqBody.Message.Mid,
+		// RecipientID: reqBody.RecipientID.ID,
 	}
+
 	err = json.Unmarshal(res.Body(), &resp)
 	if err != nil {
 		return fmt.Errorf("unmarshal response: %w", err)
