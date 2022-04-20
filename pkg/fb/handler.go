@@ -16,8 +16,8 @@ import (
 // Facebook credentials. It's better to store it in your secret storage.
 const (
 	verifyToken = "random-verify-token"
-	appSecret   = "4c9ca795d2b2dd30cb5c7aaa25586ca8"
-	accessToken = "EAAP1o8yr7p8BAAkpcxdTb0D1yyuTt6yKaDDzypTjcyra6biVqwSf84t0nRx0fZB3F05XFGZBeFAq9c9fTLf7GoKmvQZAjCagglA08XoR1tLNbiHTlboBlYp9AkUmZBnrvEOEqPxrFC9klIT5LrXLVuGQFPJUGYr15frEbiXGQG2AM9nq220wjZASYjgkUAtSoC1PS3p4h5gZDZD"
+	appSecret   = "38f8e2ec7a67e1efb2367a61a8ca1bd3"
+	accessToken = "EAAGPO11PUegBAOYnr9WOe3fpWriI7FSlJ6ZCYbwTP8ker9LZCt2S2oMSnBvgNUePiJODPTnvLwyciyqoEFhSDfHLXvFSZBbwScOnxYfDhjj7XkZBim1rJ6lQ1Hmi6OfSQkZCM88WLbhMSQxnHwqGUOzqsQWysY7CdTvC4oDrj8YqPjk4nWaLJTAkI5ZB6NbI0JU6NgAGEx2gZDZD"
 )
 
 // errors
@@ -38,13 +38,13 @@ func HandleMessenger(w http.ResponseWriter, r *http.Request) {
 
 // HandleVerification handles the verification request from Facebook.
 func HandleVerification(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Verify Token %s", verifyToken)
 	if verifyToken != r.URL.Query().Get("hub.verify_token") {
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write(nil)
 		return
 	}
 
-	log.Printf("Verify Token %s", verifyToken)
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(r.URL.Query().Get("hub.challenge")))
 }
