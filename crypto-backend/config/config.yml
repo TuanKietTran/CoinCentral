@@ -1,5 +1,5 @@
-mongoDB:
-  uri: "mongodb+srv://devops:devops@cluster0.sjyzk.mongodb.net/crypto-db?retryWrites=true&w=majority"
+server:
+  listeningAddr: ":80"
 
 coins:
   numOfSupportingCoins: 50  # Real number of supported coins

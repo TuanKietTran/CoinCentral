@@ -39,19 +39,25 @@ func main() {
 
 	// Users routes
 	router.HandleFunc("/users", handlers.CreateUserHandler).Methods("POST")
-	router.HandleFunc("/users/{userId}", handlers.GetUserHandler).Methods("GET")
-	router.HandleFunc("/users/{userId}", handlers.DeleteUserHandler).Methods("DELETE")
+	router.HandleFunc("/users", handlers.GetUserHandler).Methods("GET")
+	router.HandleFunc("/users", handlers.DeleteUserHandler).Methods("DELETE")
+
+	// Limit Notification routes
+	router.HandleFunc("/notifications/limits", handlers.CreateLimitHandler).Methods("POST")
+	router.HandleFunc("/notifications/limits", handlers.UpdateLimitHandler).Methods("PUT")
+	router.HandleFunc("/notifications/limits", handlers.GetLimitHandler).Methods("GET")
+	router.HandleFunc("/notifications/limits", handlers.DeleteLimitHandler).Methods("DELETE")
 
 	server := http.Server{
 		Handler:      router,
-		Addr:         ":80",
+		Addr:         config.Server.ListeningAddr,
 		WriteTimeout: 10 * time.Second,
 		ReadTimeout:  10 * time.Second,
 	}
 
 	// Setup graceful shutdown
 	termChan := make(chan os.Signal)
-	signal.Notify(termChan, syscall.SIGTERM, syscall.SIGINT)
+	signal.Notify(termChan, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGINT)
 
 	go func() {
 		<-termChan

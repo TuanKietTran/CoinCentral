@@ -12,8 +12,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/gorilla/mux"
+	"github.com/lithammer/shortuuid/v4"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -25,9 +24,9 @@ func GetUserHandler(writer http.ResponseWriter, req *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// Get userId from path
-	userId, ok := mux.Vars(req)["userId"]
-	if !ok {
+	// Get userId
+	userId := req.URL.Query().Get("userId")
+	if userId == "" {
 		utils.LogBadRequest(req, errors.New("missing userId"))
 		writer.WriteHeader(http.StatusBadRequest)
 		return
@@ -89,7 +88,9 @@ func CreateUserHandler(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	newUser.UserId = uuid.NewString()
+	// Fields that we must also include
+	newUser.UserId = shortuuid.New()
+	newUser.LimitList = []models.Limit{}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -115,9 +116,9 @@ func DeleteUserHandler(writer http.ResponseWriter, req *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// Get userId from path
-	userId, ok := mux.Vars(req)["userId"]
-	if !ok {
+	// Get userId
+	userId := req.URL.Query().Get("userId")
+	if userId == "" {
 		utils.LogBadRequest(req, errors.New("missing userId"))
 		writer.WriteHeader(http.StatusBadRequest)
 		return

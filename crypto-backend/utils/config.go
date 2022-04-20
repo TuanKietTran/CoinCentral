@@ -7,9 +7,9 @@ import (
 )
 
 type Config struct {
-	MongoDB struct {
-		URI string `yaml:"uri"`
-	} `yaml:"mongoDB"`
+	Server struct {
+		ListeningAddr string `yaml:"ListeningAddr"`
+	} `yaml:"server"`
 
 	Coins struct {
 		NumOfSupportingCoins int `yaml:"numOfSupportingCoins"`

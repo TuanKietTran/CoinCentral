@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: CoinCentral API
   description: blah blah
-  version: 0.0.1
+  version: 0.0.2
 
 servers:
   - url: http://localhost
@@ -29,8 +29,7 @@ paths:
               schema:
                 type: array
                 items:
-                  type: string
-                  example: "ETH"
+                  $ref: '#/components/schemas/CoinCode'
         500:
           description: Internal Server Error
 
@@ -40,6 +39,7 @@ paths:
       parameters:
         - name: code
           in: path
+          required: true
           schema:
             type: string
             example: "ETH"
@@ -64,36 +64,23 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  description: Name of User
-                  example: John Doe
+              $ref: '#/components/schemas/User'
       responses:
         200:
           description: Create user successfully
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  userId:
-                    type: string
-                    format: uuid
-                    example: 705e4dcb-3ecd-24f3-3a35-3e926e4bded5
+                $ref: '#/components/schemas/UserId'
         400:
           description: Missing `name` in request query
-
-  /users/{userId}:
     get:
       summary: Get User's info
       parameters:
         - name: userId
-          in: path
+          in: query
           schema:
-            type: string
-            format: uuid
+            $ref: '#/components/schemas/UserId'
       responses:
         200:
           description: Fetch User info successfully
@@ -111,10 +98,10 @@ paths:
       summary: Delete an existing user
       parameters:
         - name: userId
-          in: path
+          in: query
+          required: true
           schema:
-            type: string
-            format: uuid
+            $ref: '#/components/schemas/UserId'
       responses:
         200:
           description: Delete user successfully
@@ -125,46 +112,155 @@ paths:
         500:
           description: Internal Server Error
 
-  /users/{userId}/notifications/time:
+  #  /users/{userId}/notifications/time:
+  #    post:
+  #      summary: Create new Notification for User
+  #      parameters:
+  #        - name: duration
+  #          in: query
+  #          schema:
+  #            type: string
+  #            description: Time between Notification
+  #            example: 2h45m
+  #      responses:
+  #        200:
+  #          description: Create Notification successfully
+  #        500:
+  #          description: Internal Server Error
+  #    get:
+  #      summary: Get all User's created Notifications
+  #      responses:
+  #        200:
+  #          description: Get list of Notifications successfully
+  #          content:
+  #            application/json:
+  #              schema:
+  #                type: array
+  #                items:
+  #                  $ref: '#/components/schemas/Notification'
+  #    delete:
+  #      summary: Remove Notification
+  #      parameters:
+  #        - name: id
+  #          in: query
+  #          schema:
+  #            $ref: '#/components/schemas/LimitId'
+  #      responses:
+  #        200:
+  #          description: Delete Notification successfully
+  #        404:
+  #          description: Notification not found
+  #        500:
+  #          description: Internal Server Error
+
+  /notifications/limits:
     post:
-      summary: Create new Notification for User
+      summary: Create a new Limit Notification
       parameters:
-        - name: duration
+        - name: userId
           in: query
+          required: true
           schema:
-            type: string
-            description: Time between Notification
-            example: 2h45m
+            $ref: '#/components/schemas/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Limit'
       responses:
         200:
-          description: Create Notification successfully
+          description: Notification created successfully
+        400:
+          description: userId is missing
+        404:
+          description: User not found
+        500:
+          description: Internal Server Error
+    put:
+      summary: Modify an existing Limit Notification
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Limit'
+      responses:
+        200:
+          description: Notification created successfully
+        400:
+          description: userId is missing
+        404:
+          description: User not found or Limit not created
         500:
           description: Internal Server Error
     get:
-      summary: Get all User's created Notifications
+      summary: Get info of Limit Notification
+      description: "If `code` exists, return info of that specific Limit Notification.
+      Otherwise return all Limit Notification that user `userId` has."
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/UserId'
+        - name: code
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/CoinCode'
+        - name: isUpper
+          description: Whether that limit is an upper or a lower one. Must be specify if `code` is not empty
+          in: query
+          required: false
+          schema:
+            type: boolean
+            example: true
       responses:
         200:
-          description: Get list of Notifications successfully
+          description: Get Notification successfully
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Notification'
+                  $ref: '#/components/schemas/Limit'
+        400:
+          description: Bad Request - isUpper is not set when `code` is set
+        404:
+          description: User or Code not found
+        500:
+          description: Internal Server Error
     delete:
-      summary: Remove Notification
+      summary: Delete a Limit Notification
       parameters:
-        - name: id
+        - name: userId
           in: query
+          required: true
           schema:
-            type: string
-            description: Notification's ID
-            example: 624fae88e627f3fb347f3445
+            $ref: '#/components/schemas/UserId'
+        - name: code
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/CoinCode'
+        - name: isUpper
+          in: query
+          required: true
+          schema:
+            type: boolean
+            example: true
       responses:
         200:
-          description: Delete Notification successfully
+          description: Delete Limit Notification successfully
         404:
-          description: Notification not found
+          description: User or Notification not found
         500:
           description: Internal Server Error
 
@@ -190,22 +286,30 @@ paths:
 
 components:
   schemas:
+    UserId:
+      type: string
+      example: "Q9EtXLAvyfKLT5xJbeXrKj"
+
     User:
       type: object
       properties:
-        userId:
-          type: string
-          format: uuid
         name:
           type: string
           example: "John Doe"
+        telegramId:
+          type: number
+          example: 1972606077
+
+    CoinCode:
+      type: string
+      description: Coin's own code
+      example: "ETH"
+
     Coin:
       type: object
       properties:
         code:
-          type: string
-          description: Coin's own code
-          example: "ETH"
+          $ref: '#/components/schemas/CoinCode'
         name:
           type: string
           description: Coin's name
@@ -215,6 +319,7 @@ components:
           format: double
           description: Coin's price (rate)
           example: 3205.803416110673
+
     Notification:
       type: object
       properties:
@@ -227,4 +332,17 @@ components:
           description: Duration between Notification
           example: 2h45m
 
-
+    Limit:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Code of Coin
+          example: "ETH"
+        isUpper:
+          type: boolean
+          description: Whether this Limit is an upper or a lower one
+        rate:
+          type: number
+          description: The limit of this Notification
+          example: 3205.01
