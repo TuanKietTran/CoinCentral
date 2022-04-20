@@ -38,7 +38,7 @@ func Respond(ctx context.Context, recipientID, msgText string) error {
 	})
 }
 
-func callAPI(ctx context.Context, reqURI string, reqBody interface{}) error {
+func callAPI(ctx context.Context, reqURI string, reqBody SendMessageRequest) error {
 	req := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
 
@@ -65,7 +65,10 @@ func callAPI(ctx context.Context, reqURI string, reqBody interface{}) error {
 		return fmt.Errorf("do deadline: %w", err)
 	}
 
-	resp := APIResponse{}
+	resp := APIResponse{
+		MessageID:   reqBody.Message.Mid,
+		RecipientID: reqBody.RecipientID.ID,
+	}
 	err = json.Unmarshal(res.Body(), &resp)
 	if err != nil {
 		return fmt.Errorf("unmarshal response: %w", err)

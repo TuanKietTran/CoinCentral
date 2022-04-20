@@ -125,6 +125,7 @@ func handleWebHookRequestEntry(we WebHookRequestEntry) error {
 
 func handleMessage(recipientID, msgText string) error {
 	msgText = strings.TrimSpace(msgText)
+	fmt.Printf("handle Message step has recipientID = %s \n", recipientID)
 
 	var responseText string
 	switch msgText {
