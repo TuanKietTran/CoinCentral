@@ -71,7 +71,7 @@ func callAPI(ctx context.Context, reqURI string, reqBody interface{}) error {
 		return fmt.Errorf("unmarshal response: %w", err)
 	}
 	if resp.Error != nil {
-		return fmt.Errorf("The response API is %v \n Response error: %s", resp, resp.Error.Error())
+		return fmt.Errorf("The response API is %s \n Response error: %s", resp.RecipientID, resp.Error.Error())
 	}
 	if res.StatusCode() != fasthttp.StatusOK {
 		return fmt.Errorf("unexpected rsponse status %d", res.StatusCode())
