@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/valyala/fasthttp"
 	"time"
+
+	"github.com/valyala/fasthttp"
 )
 
 const (
-	uriSendMessage = "https://graph.facebook.com/v12.0/me/messages"
+	uriSendMessage = "https://graph.facebook.com/v13.0/me/messages"
 
 	defaultRequestTimeout = 10 * time.Second
 )
@@ -70,7 +71,7 @@ func callAPI(ctx context.Context, reqURI string, reqBody interface{}) error {
 		return fmt.Errorf("unmarshal response: %w", err)
 	}
 	if resp.Error != nil {
-		return fmt.Errorf("response error: %s", resp.Error.Error())
+		return fmt.Errorf("The response API is %v \n Response error: %s", resp, resp.Error.Error())
 	}
 	if res.StatusCode() != fasthttp.StatusOK {
 		return fmt.Errorf("unexpected rsponse status %d", res.StatusCode())
