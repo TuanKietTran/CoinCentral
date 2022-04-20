@@ -16,8 +16,8 @@ import (
 // Facebook credentials. It's better to store it in your secret storage.
 const (
 	verifyToken = "random-verify-token"
-	appSecret   = "d507c7daa40dffa079976dbf40ae0b79"
-	accessToken = "da471bbfb72062eb7ba12af39d82ddb0"
+	appSecret   = "4c9ca795d2b2dd30cb5c7aaa25586ca8"
+	accessToken = "EAAP1o8yr7p8BAAkpcxdTb0D1yyuTt6yKaDDzypTjcyra6biVqwSf84t0nRx0fZB3F05XFGZBeFAq9c9fTLf7GoKmvQZAjCagglA08XoR1tLNbiHTlboBlYp9AkUmZBnrvEOEqPxrFC9klIT5LrXLVuGQFPJUGYr15frEbiXGQG2AM9nq220wjZASYjgkUAtSoC1PS3p4h5gZDZD"
 )
 
 // errors
