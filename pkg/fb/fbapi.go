@@ -68,7 +68,7 @@ func callAPI(ctx context.Context, reqURI string, reqBody SendMessageRequest) err
 
 	resp := APIResponse{
 		// MessageID:   reqBody.Message.Mid,
-		// RecipientID: reqBody.RecipientID.ID,
+		// RecipientID: reqBody.RecipientID,
 	}
 
 	err = json.Unmarshal(res.Body(), &resp)
