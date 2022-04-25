@@ -66,7 +66,7 @@ func signBody(body []byte) []byte {
 func isValidSignature(signature string, body []byte) (bool, error) {
 	actualSign, err := hex.DecodeString(signature[len(signaturePrefix):])
 	if err != nil {
-		log.Println("decode string: %w", err)
+		log.Println("decode string: %v", err)
 		return false, fmt.Errorf("decode string: %w", err)
 	}
 
