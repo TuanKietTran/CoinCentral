@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -62,6 +63,7 @@ func signBody(body []byte) []byte {
 func isValidSignature(signature string, body []byte) (bool, error) {
 	actualSign, err := hex.DecodeString(signature[len(signaturePrefix):])
 	if err != nil {
+		log.Println("decode string: %w", err)
 		return false, fmt.Errorf("decode string: %w", err)
 	}
 
