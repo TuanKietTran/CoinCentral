@@ -18,12 +18,12 @@ import (
 
 func main() {
 	err := godotenv.Load()
-	if err != nil {
+	if err != nil && err.Error() != "open .env: no such file or directory" {
 		log.Panicf("Can't load .env file, err: %v", err)
 	}
 	config := utils.ReadConfigFile("config/config.yml")
 
-	db.StartMongoClient(config, true)
+	db.StartMongoClient(config)
 	defer db.StopMongoClient()
 
 	// Start goroutine of fetching crypto
@@ -48,9 +48,14 @@ func main() {
 	router.HandleFunc("/notifications/limits", handlers.GetLimitHandler).Methods("GET")
 	router.HandleFunc("/notifications/limits", handlers.DeleteLimitHandler).Methods("DELETE")
 
+	listeningPort, listeningPortExists := os.LookupEnv("PORT")
+	if !listeningPortExists {
+		log.Panicf("$PORT not exists")
+	}
+
 	server := http.Server{
 		Handler:      router,
-		Addr:         config.Server.ListeningAddr,
+		Addr:         ":" + listeningPort,
 		WriteTimeout: 10 * time.Second,
 		ReadTimeout:  10 * time.Second,
 	}
