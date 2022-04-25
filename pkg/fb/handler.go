@@ -55,6 +55,8 @@ func HandleVerification(w http.ResponseWriter, r *http.Request) {
 
 // HandleWebHook handles a webhook incoming from Facebook.
 func HandleWebHook(w http.ResponseWriter, r *http.Request) {
+	log.Printf("VERIFY Token = %s \n", verifyToken)
+	log.Printf("Access Token = %s \n", accessToken)
 	err := Authorize(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
