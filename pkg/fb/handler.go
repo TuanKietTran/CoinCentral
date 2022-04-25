@@ -41,7 +41,7 @@ func HandleMessenger(w http.ResponseWriter, r *http.Request) {
 
 // HandleVerification handles the verification request from Facebook.
 func HandleVerification(w http.ResponseWriter, r *http.Request) {
-	log.Printf("Verify Token %v", r)
+	// log.Printf("Verify Token %v", r)
 	q := r.URL.Query()
 	if verifyToken != q.Get("hub.verify_token") {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -55,8 +55,8 @@ func HandleVerification(w http.ResponseWriter, r *http.Request) {
 
 // HandleWebHook handles a webhook incoming from Facebook.
 func HandleWebHook(w http.ResponseWriter, r *http.Request) {
-	log.Printf("VERIFY Token = %s \n", verifyToken)
-	log.Printf("Access Token = %s \n", accessToken)
+	// log.Printf("VERIFY Token = %s \n", verifyToken)
+	// log.Printf("Access Token = %s \n", accessToken)
 	err := Authorize(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
