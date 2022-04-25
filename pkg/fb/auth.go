@@ -32,6 +32,7 @@ func Authorize(r *http.Request) error {
 		return errNoXSignHeader
 	}
 
+	log.Printf("Request Body with r.Body = %v at Authorize check", r.Body)
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return fmt.Errorf("read all: %w", err)
