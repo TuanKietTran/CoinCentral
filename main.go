@@ -1,13 +1,23 @@
 package main
 
 import (
+	"github.com/joho/godotenv"
 	"go-facebook-bot/pkg/fb"
 	"log"
 	"net/http"
 	"os"
 )
 
+func getEnv() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+}
+
 func main() {
+	getEnv()
+
 	http.HandleFunc("/webhook", fb.HandleMessenger)
 	http.HandleFunc("/", homepageHandler)
 

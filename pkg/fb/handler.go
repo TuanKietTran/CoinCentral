@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 
 	// "io"
+	// "github.com/joho/godotenv"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -14,10 +16,11 @@ import (
 )
 
 // Facebook credentials. It's better to store it in your secret storage.
-const (
-	verifyToken = "random-verify-token"
-	appSecret   = "38f8e2ec7a67e1efb2367a61a8ca1bd3"
-	accessToken = "EAAGPO11PUegBAOYnr9WOe3fpWriI7FSlJ6ZCYbwTP8ker9LZCt2S2oMSnBvgNUePiJODPTnvLwyciyqoEFhSDfHLXvFSZBbwScOnxYfDhjj7XkZBim1rJ6lQ1Hmi6OfSQkZCM88WLbhMSQxnHwqGUOzqsQWysY7CdTvC4oDrj8YqPjk4nWaLJTAkI5ZB6NbI0JU6NgAGEx2gZDZD"
+
+var (
+	verifyToken = os.Getenv("VERIFY_TOKEN")
+	appSecret   = os.Getenv("APP_SECRET")
+	accessToken = os.Getenv("ACCESS_TOKEN")
 )
 
 // errors
