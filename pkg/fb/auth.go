@@ -33,7 +33,7 @@ func Authorize(r *http.Request) error {
 	}
 
 	log.Printf("Signature at X-Hub = %s \n", signature)
-	log.Printf("Request Body with r.Body = %v at Authorize check", r.Body)
+
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return fmt.Errorf("read all: %w", err)
@@ -42,6 +42,7 @@ func Authorize(r *http.Request) error {
 	// We read the request body and now it's empty. We have to rewrite it for further reads.
 	r.Body.Close() //nolint:errcheck
 	r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+	log.Printf("Request Body with r.Body = %v at Authorize check", body)
 
 	validSignature, err := isValidSignature(signature, body)
 	if err != nil {
