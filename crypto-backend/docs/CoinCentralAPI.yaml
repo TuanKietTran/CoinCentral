@@ -287,18 +287,28 @@ paths:
 components:
   schemas:
     UserId:
-      type: string
-      example: "Q9EtXLAvyfKLT5xJbeXrKj"
+      type: object
+      properties:
+        id:
+          description: The ID of User, in Telegram or Messenger
+          type: string
+          example: "1972606077"
+        platform:
+          description: The platform that the User is using
+          type: string
+          example: telegram
+          enum:
+            - telegram
+            - messenger
 
     User:
       type: object
       properties:
+        id:
+          $ref: '#/components/schemas/UserId'
         name:
           type: string
           example: "John Doe"
-        telegramId:
-          type: number
-          example: 1972606077
 
     CoinCode:
       type: string

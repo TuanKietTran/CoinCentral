@@ -22,14 +22,14 @@ func GetLimitHandler(writer http.ResponseWriter, req *http.Request) {
 
 	// Get query parameter
 	code := req.URL.Query().Get("code")
-	userId := req.URL.Query().Get("userId")
-	if userId == "" {
+	userId, err := utils.GetUserId(req)
+	if err != nil {
 		writer.WriteHeader(http.StatusBadRequest)
-		utils.LogBadRequest(req)
+		utils.LogBadRequest(req, err)
 		return
 	}
 
-	result := db.UsersCollection.FindOne(ctx, bson.M{"_id": userId},
+	result := db.UsersCollection.FindOne(ctx, bson.M{"id.id": userId.Id, "id.platform": userId.Platform},
 		options.FindOne().SetProjection(bson.M{"limitList": 1}))
 
 	var user models.User
@@ -80,6 +80,9 @@ func GetLimitHandler(writer http.ResponseWriter, req *http.Request) {
 				break
 			}
 		}
+
+		writer.WriteHeader(http.StatusNotFound)
+		utils.LogNotFound(req)
 	}
 
 	utils.LogSuccess(req)
@@ -90,18 +93,16 @@ func CreateLimitHandler(writer http.ResponseWriter, req *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// Get userId
-	userId := req.URL.Query().Get("userId")
-	if userId == "" {
+	userId, err := utils.GetUserId(req)
+	if err != nil {
 		writer.WriteHeader(http.StatusBadRequest)
-		utils.LogBadRequest(req)
+		utils.LogBadRequest(req, err)
 		return
 	}
 
 	// Parse body to get Limit
 	var newLimit models.Limit
-	reqDecoder := json.NewDecoder(req.Body)
-	err := reqDecoder.Decode(&newLimit)
+	err = json.NewDecoder(req.Body).Decode(&newLimit)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		utils.LogInternalError(req, err)
@@ -122,7 +123,8 @@ func CreateLimitHandler(writer http.ResponseWriter, req *http.Request) {
 		}
 
 	// Insert into MongoDB
-	updateResult := db.UsersCollection.FindOneAndUpdate(ctx, bson.D{{"_id", userId}}, updateValue)
+	updateResult := db.UsersCollection.FindOneAndUpdate(ctx,
+		bson.M{"id.id": userId.Id, "id.platform": userId.Platform}, updateValue)
 	if updateResult.Err() == mongo.ErrNoDocuments {
 		writer.WriteHeader(http.StatusNotFound)
 		utils.LogNotFound(req)
@@ -139,18 +141,16 @@ func UpdateLimitHandler(writer http.ResponseWriter, req *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// Get userId
-	userId := req.URL.Query().Get("userId")
-	if userId == "" {
+	userId, err := utils.GetUserId(req)
+	if err != nil {
 		writer.WriteHeader(http.StatusBadRequest)
-		utils.LogBadRequest(req)
+		utils.LogBadRequest(req, err)
 		return
 	}
 
 	// Parse body to get update Limit
 	var updateLimit models.Limit
-	reqDecoder := json.NewDecoder(req.Body)
-	err := reqDecoder.Decode(&updateLimit)
+	err = json.NewDecoder(req.Body).Decode(&updateLimit)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		utils.LogInternalError(req, err)
@@ -161,7 +161,7 @@ func UpdateLimitHandler(writer http.ResponseWriter, req *http.Request) {
 	defer cancel()
 
 	filter :=
-		bson.M{"_id": userId,
+		bson.M{"id.id": userId.Id, "id.platform": userId.Platform,
 			"limitList": bson.M{
 				"$elemMatch": bson.M{
 					"code":    updateLimit.Code,
@@ -199,10 +199,10 @@ func DeleteLimitHandler(writer http.ResponseWriter, req *http.Request) {
 	// Get query parameter
 	code := req.URL.Query().Get("code")
 	isUpper, parseIsUpperErr := strconv.ParseBool(req.URL.Query().Get("isUpper"))
-	userId := req.URL.Query().Get("userId")
-	if userId == "" || code == "" || parseIsUpperErr != nil {
+	userId, err := utils.GetUserId(req)
+	if err != nil || code == "" || parseIsUpperErr != nil {
 		writer.WriteHeader(http.StatusBadRequest)
-		utils.LogBadRequest(req, errors.New("invalid or missing field"))
+		utils.LogBadRequest(req, err)
 		return
 	}
 
@@ -217,7 +217,8 @@ func DeleteLimitHandler(writer http.ResponseWriter, req *http.Request) {
 			},
 		}
 
-	result := db.UsersCollection.FindOneAndUpdate(ctx, bson.M{"_id": userId}, removeOption)
+	result := db.UsersCollection.FindOneAndUpdate(ctx,
+		bson.M{"id.id": userId.Id, "id.platform": userId.Platform}, removeOption)
 
 	if result.Err() == mongo.ErrNoDocuments {
 		writer.WriteHeader(http.StatusNotFound)

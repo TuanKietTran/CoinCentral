@@ -55,6 +55,8 @@ func StartMongoClient(config *utils.Config) {
 	UsersCollection = CryptoDB.Collection("Users")
 	CoinsCollection = CryptoDB.Collection("Coins")
 
+	createUserIndex()
+
 	// Check if Coins collection has been generated with enough coins
 	numOfCoins, err := CoinsCollection.CountDocuments(ctx, bson.D{})
 	if err != nil {
@@ -77,6 +79,33 @@ func StopMongoClient() {
 	defer cancel()
 	if err := MongoClient.Disconnect(ctx); err != nil {
 		log.Fatalf("Can't close MongoDB connection, %v", err)
+	}
+}
+
+func createUserIndex() {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	indexList, err := UsersCollection.Indexes().ListSpecifications(ctx)
+	if err != nil {
+		log.Panicf("Can't read User collection indexes, err: %v", err)
+	}
+
+	for _, index := range indexList {
+		if index.Name == "idIndex" {
+			// Index exists, stop function
+			return
+		}
+	}
+
+	idIndex := mongo.IndexModel{
+		// bson.M{"id.id": 1, "id.platform": -1}
+		Keys:    bson.D{{"id.id", 1}, {"id.platform", 1}},
+		Options: options.Index().SetName("idIndex"),
+	}
+
+	if _, err = UsersCollection.Indexes().CreateOne(ctx, idIndex); err != nil {
+		log.Panicf("Can't create userId Index for User collection, err: %v", err)
 	}
 }
 
