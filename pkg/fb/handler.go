@@ -137,6 +137,7 @@ func handleMessage(recipientID, msgText string) error {
 	case "hello":
 		responseText = "world"
 	// @TODO your custom cases
+	// map (recipientid, int[] bound, state)
 	default:
 		responseText = "What can I do for you?"
 	}

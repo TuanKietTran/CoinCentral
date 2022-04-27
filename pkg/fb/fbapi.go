@@ -11,7 +11,8 @@ import (
 
 const (
 	// uriSendMessage = "https://graph.facebook.com/v13.0/me/messages"
-	uriSendMessage = "https://graph.facebook.com/v2.6/me/messages"
+	// uriSendMessage = "https://graph.facebook.com/v2.6/me/messages"
+	uriSendMessage = "https://graph.facebook.com/v13.0/me/messages" //?access_token=<PAGE_ACCESS_TOKEN>
 
 	defaultRequestTimeout = 10 * time.Second
 )
@@ -39,6 +40,7 @@ func Respond(ctx context.Context, recipientID, msgText string) error {
 	})
 }
 
+//send API to messenger platform
 func callAPI(ctx context.Context, reqURI string, reqBody SendMessageRequest) error {
 	req := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
