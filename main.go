@@ -29,8 +29,8 @@ func main() {
 
 	// port := ":4000"
 	log.Printf("PORT = %v \n", os.Getenv("PORT"))
-	// log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), nil))
-	log.Fatal(http.ListenAndServe(":8089", nil))
+	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), nil))
+	// log.Fatal(http.ListenAndServe(":8089", nil))
 }
 
 func homepageHandler(w http.ResponseWriter, r *http.Request) {
