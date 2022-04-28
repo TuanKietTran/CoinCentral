@@ -1,5 +1,5 @@
 coins:
   numOfSupportingCoins: 50  # Real number of supported coins
   numOfFetchCoin: 100       # Num of coin to fetch at every request.
-                            # The larger this number is, the less likely we miss our coin
-  timeBetweenFetch: 120     # Time between updates, in seconds
+  # The larger this number is, the less likely we miss our coin
+  timeBetweenFetch: 60      # Time between updates, in seconds

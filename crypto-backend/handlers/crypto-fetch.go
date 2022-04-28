@@ -13,7 +13,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"sort"
 	"strings"
 	"time"
 )
@@ -52,6 +51,7 @@ func FetchCrypto(config *utils.Config) {
 
 func fetchRankAndInsert(config *utils.Config, apiKey string) {
 	log.Println("Updating Coins collection")
+	now := time.Now()
 
 	reqPayload := strings.NewReader(fmt.Sprintf(`{
 	"currency": "USD",
@@ -79,38 +79,27 @@ func fetchRankAndInsert(config *utils.Config, apiKey string) {
 	if err = json.NewDecoder(resp.Body).Decode(&updatedCoins); err != nil {
 		log.Panicf("Can't parse Live Coin Watch result, %v", err)
 	}
-	sort.Sort(updatedCoins)
 
-	// Create a writeModel
-	writeModel := make([]mongo.WriteModel, config.Coins.NumOfSupportingCoins)
-	counter := 0 // Count how many coins is updated
-	updatedIndex := 0
-	for i, value := range LatestCoins {
-		for updatedIndex < len(updatedCoins) && updatedCoins[updatedIndex].Code < value.Code {
-			updatedIndex += 1
-		}
-
-		// Max index reached, stop
-		if updatedIndex == len(updatedCoins) {
-			break
-		}
-
-		if value.Code == updatedCoins[updatedIndex].Code {
-			writeModel[i] = mongo.NewUpdateOneModel().
-				SetFilter(bson.M{"code": value.Code}).
-				SetUpdate(bson.M{"$set": bson.M{
-					"rate": updatedCoins[updatedIndex].Rate,
-				}})
-			counter += 1
-		}
+	writeModel := make([]mongo.WriteModel, config.Coins.NumOfFetchCoin)
+	for i, coin := range updatedCoins {
+		writeModel[i] = mongo.NewUpdateOneModel().
+			SetFilter(bson.M{"code": coin.Code}).
+			SetUpdate(bson.M{"$set": bson.M{
+				"rate": coin.Rate,
+			}}).
+			SetUpsert(false)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	if _, err := db.CoinsCollection.BulkWrite(ctx, writeModel, options.BulkWrite().SetOrdered(false)); err != nil {
+	result, err := db.CoinsCollection.BulkWrite(ctx, writeModel, options.BulkWrite().SetOrdered(false))
+	if err != nil {
 		log.Panicf("Can't update Coins collection, err: %v", err)
 	}
 
-	log.Printf("Finishing update Coins collection, updated %v coins\n", counter)
+	log.Printf("Update time: %v", time.Since(now))
+	log.Printf("Finishing update Coins collection. Updated %v coins. Time took: %v",
+		result.MatchedCount,
+		time.Since(now))
 }
