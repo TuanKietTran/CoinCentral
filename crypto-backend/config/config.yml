@@ -1,6 +1,3 @@
-server:
-  listeningAddr: ":80"
-
 coins:
   numOfSupportingCoins: 50  # Real number of supported coins
   numOfFetchCoin: 100       # Num of coin to fetch at every request.

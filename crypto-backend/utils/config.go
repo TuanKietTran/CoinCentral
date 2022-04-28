@@ -7,10 +7,6 @@ import (
 )
 
 type Config struct {
-	Server struct {
-		ListeningAddr string `yaml:"ListeningAddr"`
-	} `yaml:"server"`
-
 	Coins struct {
 		NumOfSupportingCoins int `yaml:"numOfSupportingCoins"`
 		NumOfFetchCoin       int `yaml:"numOfFetchCoin"`
