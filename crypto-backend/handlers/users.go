@@ -6,7 +6,6 @@ import (
 	"crypto-backend/models"
 	"crypto-backend/utils"
 	"encoding/json"
-	"log"
 	"net/http"
 	"time"
 
@@ -29,7 +28,7 @@ func GetUserHandler(writer http.ResponseWriter, req *http.Request) {
 	}
 
 	// Search for user with userId
-	cursor, err := collection.Find(ctx, bson.M{"id.id": userId.Id, "id.platform": userId.Platform})
+	cursor, err := collection.Find(ctx, bson.M{"id": userId.Id, "platform": userId.Platform})
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		utils.LogInternalError(req, err)
@@ -101,7 +100,6 @@ func CreateUserHandler(writer http.ResponseWriter, req *http.Request) {
 }
 
 func DeleteUserHandler(writer http.ResponseWriter, req *http.Request) {
-	log.Println("Deleting")
 	writer.Header().Set("Content-Type", "application/json")
 	collection := db.UsersCollection
 
@@ -117,7 +115,7 @@ func DeleteUserHandler(writer http.ResponseWriter, req *http.Request) {
 	}
 
 	// Search for user with userId
-	deleteResult, err := collection.DeleteOne(ctx, bson.M{"id.id": userId.Id, "id.platform": userId.Platform})
+	deleteResult, err := collection.DeleteOne(ctx, bson.M{"id": userId.Id, "platform": userId.Platform})
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		utils.LogInternalError(req, err)

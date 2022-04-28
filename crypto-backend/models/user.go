@@ -6,7 +6,8 @@ type UserId struct {
 }
 
 type User struct {
-	Id        UserId  `bson:"id" json:"id"`
+	Id        string  `bson:"id" json:"id"`
+	Platform  string  `bson:"platform" json:"platform"`
 	Name      string  `bson:"name" json:"name"`
 	LimitList []Limit `bson:"limitList" json:"limitList"`
 }

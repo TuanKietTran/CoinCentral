@@ -100,7 +100,7 @@ func createUserIndex() {
 
 	idIndex := mongo.IndexModel{
 		// bson.M{"id.id": 1, "id.platform": -1}
-		Keys:    bson.D{{"id.id", 1}, {"id.platform", 1}},
+		Keys:    bson.D{{"id", 1}, {"platform", 1}},
 		Options: options.Index().SetName("idIndex"),
 	}
 
