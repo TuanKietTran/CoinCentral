@@ -48,6 +48,11 @@ func main() {
 	router.HandleFunc("/notifications/limits", handlers.GetLimitHandler).Methods("GET")
 	router.HandleFunc("/notifications/limits", handlers.DeleteLimitHandler).Methods("DELETE")
 
+	// Serve documentation
+	router.
+		PathPrefix("/docs").
+		Handler(http.StripPrefix("/docs", http.FileServer(http.Dir("./docs/"))))
+
 	server := http.Server{
 		Handler:      router,
 		Addr:         config.Server.ListeningAddr,
