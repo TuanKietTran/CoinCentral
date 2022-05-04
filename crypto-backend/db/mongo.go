@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"sort"
 	"strings"
 	"time"
 
@@ -99,7 +98,6 @@ func createUserIndex() {
 	}
 
 	idIndex := mongo.IndexModel{
-		// bson.M{"id.id": 1, "id.platform": -1}
 		Keys:    bson.D{{"id", 1}, {"platform", 1}},
 		Options: options.Index().SetName("idIndex"),
 	}
@@ -136,6 +134,7 @@ func fillCoinsCollection(config *utils.Config) {
 		Init Coin Collection with coins. These coins will be our supported coins
 	*/
 	log.Println("Initializing Coins collection")
+	now := time.Now()
 
 	// Get $APIKEY
 	apiKey, apiExists := os.LookupEnv("APIKEY")
@@ -166,11 +165,10 @@ func fillCoinsCollection(config *utils.Config) {
 	}
 
 	// Parse response's body
-	var coinList models.CoinList
+	var coinList []models.Coin
 	if err = json.NewDecoder(resp.Body).Decode(&coinList); err != nil {
 		log.Panicf("Can't parse response, err: %v", err)
 	}
-	sort.Sort(coinList)
 
 	// Create an array of interface for `InsertMany`
 	coinsInterface := make([]interface{}, len(coinList))
@@ -184,5 +182,5 @@ func fillCoinsCollection(config *utils.Config) {
 		log.Panicf("Can't insert coins into collection, err: %v", err)
 	}
 
-	log.Println("Finished init Coins collection")
+	log.Printf("Finished init Coins collection, time took: %v", time.Since(now))
 }
