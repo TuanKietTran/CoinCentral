@@ -90,8 +90,6 @@ func GetLimitHandler(writer http.ResponseWriter, req *http.Request) {
 
 func CreateLimitHandler(writer http.ResponseWriter, req *http.Request) {
 	writer.Header().Set("Content-Type", "application/json")
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
 
 	userId, err := utils.GetUserId(req)
 	if err != nil {
@@ -109,7 +107,7 @@ func CreateLimitHandler(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	// We add new Limit and sort the array

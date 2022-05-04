@@ -98,8 +98,7 @@ func fetchRankAndInsert(config *utils.Config, apiKey string) {
 		log.Panicf("Can't update Coins collection, err: %v", err)
 	}
 
-	log.Printf("Update time: %v", time.Since(now))
-	log.Printf("Finishing update Coins collection. Updated %v coins. Time took: %v",
+	log.Printf("Finished update Coins collection. Updated %v coins. Time took: %v",
 		result.MatchedCount,
 		time.Since(now))
 }

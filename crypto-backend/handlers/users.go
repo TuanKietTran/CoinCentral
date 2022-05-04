@@ -84,6 +84,8 @@ func CreateUserHandler(writer http.ResponseWriter, req *http.Request) {
 
 	// Fields that we must also include
 	newUser.LimitList = []models.Limit{}
+	newUser.CodeList = []string{}
+	newUser.TimeList = []time.Time{}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
