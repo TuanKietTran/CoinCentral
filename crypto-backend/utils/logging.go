@@ -9,6 +9,10 @@ func LogSuccess(req *http.Request) {
 	log.Printf("%v %s 200\n", req.Method, req.URL)
 }
 
+func LogCreated(req *http.Request) {
+	log.Printf("%v %s 201\n", req.Method, req.URL)
+}
+
 func LogBadRequest(req *http.Request, err ...error) {
 	log.Printf("%v %s 400, err: %v", req.Method, req.URL, err)
 }

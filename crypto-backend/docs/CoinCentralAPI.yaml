@@ -66,12 +66,8 @@ paths:
             schema:
               $ref: '#/components/schemas/User'
       responses:
-        200:
+        201:
           description: Create user successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserId'
         400:
           description: Missing `name` in request query
     get:
@@ -89,7 +85,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
         400:
-          description: Missing `userId` in request path
+          description: Missing field(s) in request query
         404:
           description: User not found
         500:
@@ -106,9 +102,9 @@ paths:
         200:
           description: Delete user successfully
         400:
-          description: Missing `userId` in request query
+          description: Missing field(s) in request query
         404:
-          description: Can't find user with `userId`
+          description: User not found
         500:
           description: Internal Server Error
 
@@ -172,7 +168,7 @@ paths:
         200:
           description: Notification created successfully
         400:
-          description: userId is missing
+          description: Missing field(s) in request query
         404:
           description: User not found
         500:
@@ -193,11 +189,11 @@ paths:
               $ref: '#/components/schemas/Limit'
       responses:
         200:
-          description: Notification created successfully
+          description: Notification updated successfully
         400:
-          description: userId is missing
+          description: Missing field(s) in request query
         404:
-          description: User not found or Limit not created
+          description: User or Limit not found
         500:
           description: Internal Server Error
     get:
@@ -260,7 +256,7 @@ paths:
         200:
           description: Delete Limit Notification successfully
         404:
-          description: User or Notification not found
+          description: User or Limit not found
         500:
           description: Internal Server Error
 
@@ -287,18 +283,37 @@ paths:
 components:
   schemas:
     UserId:
-      type: string
-      example: "Q9EtXLAvyfKLT5xJbeXrKj"
+      type: object
+      properties:
+        id:
+          description: The ID of User, in Telegram or Messenger
+          type: string
+          example: "1972606077"
+        platform:
+          description: The platform that the User is using
+          type: string
+          example: telegram
+          enum:
+            - telegram
+            - messenger
 
     User:
       type: object
       properties:
+        id:
+          description: The ID of User, in Telegram or Messenger
+          type: string
+          example: "1972606077"
+        platform:
+          description: The platform that the User is using
+          type: string
+          example: telegram
+          enum:
+            - telegram
+            - messenger
         name:
           type: string
           example: "John Doe"
-        telegramId:
-          type: number
-          example: 1972606077
 
     CoinCode:
       type: string
