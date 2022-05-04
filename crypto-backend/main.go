@@ -48,6 +48,10 @@ func main() {
 	router.HandleFunc("/notifications/limits", handlers.GetLimitHandler).Methods("GET")
 	router.HandleFunc("/notifications/limits", handlers.DeleteLimitHandler).Methods("DELETE")
 
+	router.HandleFunc("/notifications/period", handlers.PostTimerHandler).Methods("POST")
+	router.HandleFunc("/notifications/period", handlers.GetTimerHandler).Methods("GET")
+	router.HandleFunc("/notifications/period", handlers.DeleteTimerHandler).Methods("DELETE")
+
 	// Serve documentation
 	router.
 		PathPrefix("/docs").
