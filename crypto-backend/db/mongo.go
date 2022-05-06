@@ -48,7 +48,11 @@ func StartMongoClient(config *utils.Config) {
 		log.Panicf("Can't ping MongoDB server, err: %v", err)
 	}
 
-	CryptoDB = MongoClient.Database("crypto-db")
+	dbName, dbExists := os.LookupEnv("DB")
+	if !dbExists {
+		dbName = "crypto-dbName"
+	}
+	CryptoDB = MongoClient.Database(dbName)
 
 	// Get collection pointers
 	UsersCollection = CryptoDB.Collection("Users")
@@ -183,4 +187,29 @@ func fillCoinsCollection(config *utils.Config) {
 	}
 
 	log.Printf("Finished init Coins collection, time took: %v", time.Since(now))
+}
+
+func CreateCoinHashMap() map[string]float64 {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	cursor, err := CoinsCollection.Find(ctx, bson.D{})
+	if err != nil {
+		log.Panicf("Can't connect to Coin collection, err: %v", err)
+	}
+
+	coinMap := make(map[string]float64)
+	var coin models.Coin
+	for cursor.Next(ctx) {
+		if err = cursor.Decode(&coin); err != nil {
+			log.Panicf("Can't parsed result coin, err: %v", err)
+		}
+
+		coinMap[coin.Code] = coin.Rate
+	}
+
+	if err = cursor.Close(ctx); err != nil {
+		log.Printf("Can't close cursor for fetching limit")
+	}
+	return coinMap
 }
