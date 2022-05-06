@@ -26,8 +26,12 @@ func main() {
 	db.StartMongoClient(config)
 	defer db.StopMongoClient()
 
+	coinUpdatedChan := make(chan bool)
+
 	// Start goroutine of fetching crypto
-	go handlers.FetchCrypto(config)
+	go handlers.FetchCrypto(config, coinUpdatedChan)
+
+	go handlers.CheckForLimitPassing(coinUpdatedChan)
 
 	// Setup router
 	router := mux.NewRouter()
@@ -57,6 +61,9 @@ func main() {
 	router.
 		PathPrefix("/docs").
 		Handler(http.StripPrefix("/docs", http.FileServer(http.Dir("./docs/"))))
+
+	// Webhook routes
+	router.HandleFunc("/webhook/create", handlers.CreateWebhookHandler).Methods("POST")
 
 	listeningPort, listeningPortExists := os.LookupEnv("PORT")
 	if !listeningPortExists {
