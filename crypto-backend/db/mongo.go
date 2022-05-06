@@ -50,7 +50,7 @@ func StartMongoClient(config *utils.Config) {
 
 	dbName, dbExists := os.LookupEnv("DB")
 	if !dbExists {
-		dbName = "crypto-dbName"
+		dbName = "crypto-db"
 	}
 	CryptoDB = MongoClient.Database(dbName)
 
