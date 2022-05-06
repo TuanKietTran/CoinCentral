@@ -82,6 +82,20 @@ func CreateUserHandler(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// Check if ID is empty
+	if newUser.Id == "" {
+		writer.WriteHeader(http.StatusBadRequest)
+		utils.LogBadRequest(req)
+		return
+	}
+
+	// Check if platform is correct
+	if newUser.Platform != "telegram" && newUser.Platform != "messenger" {
+		writer.WriteHeader(http.StatusBadRequest)
+		utils.LogBadRequest(req)
+		return
+	}
+
 	// Fields that we must also include
 	newUser.LimitList = []models.Limit{}
 	newUser.CodeList = []string{}
