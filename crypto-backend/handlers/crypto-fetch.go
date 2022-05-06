@@ -20,7 +20,7 @@ import (
 // LatestCoins List of the latest rates
 var LatestCoins models.CoinList
 
-func FetchCrypto(config *utils.Config) {
+func FetchCrypto(config *utils.Config, coinUpdatedChan chan bool) {
 	var apiKey, apiExists = os.LookupEnv("APIKEY")
 	if !apiExists {
 		log.Panicln("$APIKEY not exists")
@@ -40,11 +40,13 @@ func FetchCrypto(config *utils.Config) {
 
 	// Start operation loop
 	fetchRankAndInsert(config, apiKey)
+	coinUpdatedChan <- true
 	ticker := time.NewTicker(time.Duration(config.Coins.TimeBetweenFetch) * time.Second)
 	for {
 		select {
 		case <-ticker.C:
 			fetchRankAndInsert(config, apiKey)
+			coinUpdatedChan <- true
 		}
 	}
 }

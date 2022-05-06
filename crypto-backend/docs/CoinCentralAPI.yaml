@@ -271,14 +271,51 @@ paths:
 #              type: object
 #              properties:
 #                callbackUrl:
-#                  type: string
-#                  format: uri
-#                  example: https://myserver.com/send/callback/here
-#              required:
-#                - callbackUrl
-#      responses:
-#        201:
-#          description: Webhook created
+  #                  type: string
+  #                  format: uri
+  #                  example: https://myserver.com/send/callback/here
+  #              required:
+  #                - callbackUrl
+  #      responses:
+  #        201:
+  #          description: Webhook created
+
+  /webhook/create:
+    post:
+      summary: Subscribe to Webhook
+      requestBody:
+        required: True
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookRequest'
+      callbacks:
+        ping:
+          '{$request.body#/callbackUrl}/ping':
+            get:
+              responses:
+                200:
+                  description: pong
+
+        newLimitMsg:
+          '{$request.body#/callbackUrl}/limits':
+            post:
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/WebhookLimitMsg'
+              responses:
+                200:
+                  description: Request accepted
+      responses:
+        201:
+          description: Webhook created
+        400:
+          description: "Bad request body: wrong callbackUrl or webhook server not running"
+        404:
+          description: Can't connect to bot Webhook server
 
 components:
   schemas:
@@ -361,3 +398,24 @@ components:
           type: number
           description: The limit of this Notification
           example: 3205.01
+
+    WebhookRequest:
+      type: object
+      properties:
+        callbackUrl:
+          type: string
+          format: uri
+          example: https://myserver.com/send/callback/here
+        platform:
+          type: string
+          enum:
+            - telegram
+            - messenger
+
+    WebhookLimitMsg:
+      type: object
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        limit:
+          $ref: '#/components/schemas/Limit'
