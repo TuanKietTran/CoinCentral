@@ -1,0 +1,363 @@
+openapi: 3.0.0
+info:
+  title: CoinCentral API
+  description: blah blah
+  version: 0.0.2
+
+servers:
+  - url: http://localhost
+    description: Development server
+
+paths:
+  /status:
+    get:
+      summary: Allow client to test for connection
+      responses:
+        200:
+          description: Connect succesfully
+        default:
+          description: An error has occurred
+
+  /coins:
+    get:
+      summary: Get list of supported Coin or Coin's info
+      responses:
+        200:
+          description: Fetch supported list succesfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CoinCode'
+        500:
+          description: Internal Server Error
+
+  /coins/{code}:
+    get:
+      summary: Get info about Coin
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "ETH"
+      responses:
+        200:
+          description: Get info of Coin successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Coin'
+        404:
+          description: Coin not found
+        500:
+          description: Internal Server Error
+
+  /users:
+    post:
+      summary: Creates a new User
+      requestBody:
+        description: Infos about User
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        201:
+          description: Create user successfully
+        400:
+          description: Missing `name` in request query
+    get:
+      summary: Get User's info
+      parameters:
+        - name: userId
+          in: query
+          schema:
+            $ref: '#/components/schemas/UserId'
+      responses:
+        200:
+          description: Fetch User info successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        400:
+          description: Missing field(s) in request query
+        404:
+          description: User not found
+        500:
+          description: Internal Server Error
+    delete:
+      summary: Delete an existing user
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/UserId'
+      responses:
+        200:
+          description: Delete user successfully
+        400:
+          description: Missing field(s) in request query
+        404:
+          description: User not found
+        500:
+          description: Internal Server Error
+
+  #  /users/{userId}/notifications/time:
+  #    post:
+  #      summary: Create new Notification for User
+  #      parameters:
+  #        - name: duration
+  #          in: query
+  #          schema:
+  #            type: string
+  #            description: Time between Notification
+  #            example: 2h45m
+  #      responses:
+  #        200:
+  #          description: Create Notification successfully
+  #        500:
+  #          description: Internal Server Error
+  #    get:
+  #      summary: Get all User's created Notifications
+  #      responses:
+  #        200:
+  #          description: Get list of Notifications successfully
+  #          content:
+  #            application/json:
+  #              schema:
+  #                type: array
+  #                items:
+  #                  $ref: '#/components/schemas/Notification'
+  #    delete:
+  #      summary: Remove Notification
+  #      parameters:
+  #        - name: id
+  #          in: query
+  #          schema:
+  #            $ref: '#/components/schemas/LimitId'
+  #      responses:
+  #        200:
+  #          description: Delete Notification successfully
+  #        404:
+  #          description: Notification not found
+  #        500:
+  #          description: Internal Server Error
+
+  /notifications/limits:
+    post:
+      summary: Create a new Limit Notification
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Limit'
+      responses:
+        200:
+          description: Notification created successfully
+        400:
+          description: Missing field(s) in request query
+        404:
+          description: User not found
+        500:
+          description: Internal Server Error
+    put:
+      summary: Modify an existing Limit Notification
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Limit'
+      responses:
+        200:
+          description: Notification updated successfully
+        400:
+          description: Missing field(s) in request query
+        404:
+          description: User or Limit not found
+        500:
+          description: Internal Server Error
+    get:
+      summary: Get info of Limit Notification
+      description: "If `code` exists, return info of that specific Limit Notification.
+      Otherwise return all Limit Notification that user `userId` has."
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/UserId'
+        - name: code
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/CoinCode'
+        - name: isUpper
+          description: Whether that limit is an upper or a lower one. Must be specify if `code` is not empty
+          in: query
+          required: false
+          schema:
+            type: boolean
+            example: true
+      responses:
+        200:
+          description: Get Notification successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Limit'
+        400:
+          description: Bad Request - isUpper is not set when `code` is set
+        404:
+          description: User or Code not found
+        500:
+          description: Internal Server Error
+    delete:
+      summary: Delete a Limit Notification
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/UserId'
+        - name: code
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/CoinCode'
+        - name: isUpper
+          in: query
+          required: true
+          schema:
+            type: boolean
+            example: true
+      responses:
+        200:
+          description: Delete Limit Notification successfully
+        404:
+          description: User or Limit not found
+        500:
+          description: Internal Server Error
+
+#  /webhook:
+#    post:
+#      summary: Subscribe to Webhook
+#      requestBody:
+#        required: True
+#        content:
+#          application/json:
+#            schema:
+#              type: object
+#              properties:
+#                callbackUrl:
+#                  type: string
+#                  format: uri
+#                  example: https://myserver.com/send/callback/here
+#              required:
+#                - callbackUrl
+#      responses:
+#        201:
+#          description: Webhook created
+
+components:
+  schemas:
+    UserId:
+      type: object
+      properties:
+        id:
+          description: The ID of User, in Telegram or Messenger
+          type: string
+          example: "1972606077"
+        platform:
+          description: The platform that the User is using
+          type: string
+          example: telegram
+          enum:
+            - telegram
+            - messenger
+
+    User:
+      type: object
+      properties:
+        id:
+          description: The ID of User, in Telegram or Messenger
+          type: string
+          example: "1972606077"
+        platform:
+          description: The platform that the User is using
+          type: string
+          example: telegram
+          enum:
+            - telegram
+            - messenger
+        name:
+          type: string
+          example: "John Doe"
+
+    CoinCode:
+      type: string
+      description: Coin's own code
+      example: "ETH"
+
+    Coin:
+      type: object
+      properties:
+        code:
+          $ref: '#/components/schemas/CoinCode'
+        name:
+          type: string
+          description: Coin's name
+          example: "Ethereum"
+        rate:
+          type: number
+          format: double
+          description: Coin's price (rate)
+          example: 3205.803416110673
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Notification's ID
+          example: 624fae88e627f3fb347f3445
+        duration:
+          type: string
+          description: Duration between Notification
+          example: 2h45m
+
+    Limit:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Code of Coin
+          example: "ETH"
+        isUpper:
+          type: boolean
+          description: Whether this Limit is an upper or a lower one
+        rate:
+          type: number
+          description: The limit of this Notification
+          example: 3205.01

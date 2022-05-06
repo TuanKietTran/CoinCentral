@@ -1,121 +1,104 @@
 package handlers
 
 import (
-	"bytes"
+	"context"
+	"crypto-backend/db"
 	"crypto-backend/models"
+	"crypto-backend/utils"
 	"encoding/json"
-	"io"
+	"fmt"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
-var metaOffRequest = bytes.NewBuffer([]byte(`{
-	"currency": "USD",
-	"order": "ascending",
-    "sort": "rank",
-    "limit": 100,
-    "meta": false
-}`))
-var metaOnRequest = bytes.NewBuffer([]byte(`{
-	"currency": "USD",
-	"order": "ascending",
-    "sort": "rank",
-    "limit": 100,
-    "meta": true
-}`))
+// LatestCoins List of the latest rates
+var LatestCoins models.CoinList
 
-var apiKey, apiExists = os.LookupEnv("APIKEY")
-
-func FetchCrypto() {
+func FetchCrypto(config *utils.Config) {
+	var apiKey, apiExists = os.LookupEnv("APIKEY")
 	if !apiExists {
-		log.Panicln("$APIKEY must exists")
+		log.Panicln("$APIKEY not exists")
 	}
 
-	client := &http.Client{}
+	// Get list of supported Coins
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	cursor, err := db.CoinsCollection.Find(ctx, bson.D{})
+	if err != nil {
+		log.Panicf("Can't fetch supported Coins from MongoDB, err: %v", err)
+	}
+	cancel()
 
-	var metaList []models.CoinMeta
-	metaList = fetchMeta(client)
-	log.Println(metaList)
+	if err = cursor.All(ctx, &LatestCoins); err != nil {
+		log.Panicf("Can't parsed list of supported Coins")
+	}
 
-	//var valueList []models.CoinRate
-	//valueList = fetchValue(client)
-
-	rateTicker := time.NewTimer(30 * time.Second)
-	defer rateTicker.Stop()
-
-	metaTicker := time.NewTicker(5 * time.Minute)
-	defer metaTicker.Stop()
-
+	// Start operation loop
+	fetchRankAndInsert(config, apiKey)
+	ticker := time.NewTicker(time.Duration(config.Coins.TimeBetweenFetch) * time.Second)
 	for {
 		select {
-		case <-rateTicker.C:
-
+		case <-ticker.C:
+			fetchRankAndInsert(config, apiKey)
 		}
 	}
 }
 
-func fetchMeta(client *http.Client) []models.CoinMeta {
-	req, err := http.NewRequest("POST", "https://api.livecoinwatch.com/coins/list", metaOnRequest)
+func fetchRankAndInsert(config *utils.Config, apiKey string) {
+	log.Println("Updating Coins collection")
+	now := time.Now()
+
+	reqPayload := strings.NewReader(fmt.Sprintf(`{
+	"currency": "USD",
+    "sort": "rank",
+    "order": "ascending",
+    "limit": %v,
+    "meta": false
+}`, config.Coins.NumOfFetchCoin))
+
+	req, err := http.NewRequest("POST", "https://api.livecoinwatch.com/coins/list", reqPayload)
 	if err != nil {
-		log.Panicf("Can't create new HTTP Request, %v", err)
+		log.Panicf("Can't create new Live Coin Watch request, %v", err)
 	}
-	req.Header.Add("content-type", "application/json")
+	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("x-api-key", apiKey)
 
-	resp, err := client.Do(req)
+	resp, err := utils.HttpClient.Do(req)
+	defer utils.CloseResponseBody(resp)
 	if err != nil {
-		log.Panicf("Can't fetch Response, %v", err)
-	} else if resp.StatusCode != http.StatusOK {
-		log.Panicf("Response Status Code %v", resp.StatusCode)
+		log.Panicf("Can't fetch Live Coin Watch response, %v", err)
 	}
 
-	respBody, err := io.ReadAll(resp.Body)
+	// Parsed response's body
+	var updatedCoins models.CoinList
+	if err = json.NewDecoder(resp.Body).Decode(&updatedCoins); err != nil {
+		log.Panicf("Can't parse Live Coin Watch result, %v", err)
+	}
+
+	writeModel := make([]mongo.WriteModel, config.Coins.NumOfFetchCoin)
+	for i, coin := range updatedCoins {
+		writeModel[i] = mongo.NewUpdateOneModel().
+			SetFilter(bson.M{"code": coin.Code}).
+			SetUpdate(bson.M{"$set": bson.M{
+				"rate": coin.Rate,
+			}}).
+			SetUpsert(false)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	result, err := db.CoinsCollection.BulkWrite(ctx, writeModel, options.BulkWrite().SetOrdered(false))
 	if err != nil {
-		log.Panicf("Can't read Reponse body, %v", err)
+		log.Panicf("Can't update Coins collection, err: %v", err)
 	}
 
-	if err = resp.Body.Close(); err != nil {
-		log.Panicf("Can't close Response body, %v", err)
-	}
-
-	var metaList []models.CoinMeta
-	if err = json.Unmarshal(respBody, &metaList); err != nil {
-		log.Panicf("Can't parse Response body into Array of CoinMeta, %v", err)
-	}
-
-	return metaList
-}
-
-func fetchValue(client http.Client) []models.CoinRate {
-	req, err := http.NewRequest("POST", "https://api.livecoinwatch.com/coins/list", metaOffRequest)
-	if err != nil {
-		log.Panicf("Can't create new HTTP Request, %v", err)
-	}
-	req.Header.Add("content-type", "application/json")
-	req.Header.Add("x-api-key", apiKey)
-
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Panicf("Can't fetch Response, %v", err)
-	} else if resp.StatusCode != http.StatusOK {
-		log.Panicf("Response Status Code %v", resp.StatusCode)
-	}
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Panicf("Can't read Reponse body, %v", err)
-	}
-
-	if err = resp.Body.Close(); err != nil {
-		log.Panicf("Can't close Response body, %v", err)
-	}
-
-	var valueList []models.CoinRate
-	if err = json.Unmarshal(respBody, &valueList); err != nil {
-		log.Panicf("Can't parse Response body into Array of CoinRate, %v", err)
-	}
-
-	return valueList
+	log.Printf("Finished update Coins collection. Updated %v coins. Time took: %v",
+		result.MatchedCount,
+		time.Since(now))
 }
