@@ -24,6 +24,8 @@ var CryptoDB *mongo.Database
 var UsersCollection *mongo.Collection
 var CoinsCollection *mongo.Collection
 
+var CoinHashMap map[string]float64
+
 var err error // Share error
 
 func StartMongoClient(config *utils.Config) {

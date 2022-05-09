@@ -14,7 +14,7 @@ paths:
       summary: Allow client to test for connection
       responses:
         200:
-          description: Connect succesfully
+          description: Connect successfully
         default:
           description: An error has occurred
 
@@ -23,7 +23,7 @@ paths:
       summary: Get list of supported Coin or Coin's info
       responses:
         200:
-          description: Fetch supported list succesfully
+          description: Fetch supported list successfully
           content:
             application/json:
               schema:
@@ -107,47 +107,6 @@ paths:
           description: User not found
         500:
           description: Internal Server Error
-
-  #  /users/{userId}/notifications/time:
-  #    post:
-  #      summary: Create new Notification for User
-  #      parameters:
-  #        - name: duration
-  #          in: query
-  #          schema:
-  #            type: string
-  #            description: Time between Notification
-  #            example: 2h45m
-  #      responses:
-  #        200:
-  #          description: Create Notification successfully
-  #        500:
-  #          description: Internal Server Error
-  #    get:
-  #      summary: Get all User's created Notifications
-  #      responses:
-  #        200:
-  #          description: Get list of Notifications successfully
-  #          content:
-  #            application/json:
-  #              schema:
-  #                type: array
-  #                items:
-  #                  $ref: '#/components/schemas/Notification'
-  #    delete:
-  #      summary: Remove Notification
-  #      parameters:
-  #        - name: id
-  #          in: query
-  #          schema:
-  #            $ref: '#/components/schemas/LimitId'
-  #      responses:
-  #        200:
-  #          description: Delete Notification successfully
-  #        404:
-  #          description: Notification not found
-  #        500:
-  #          description: Internal Server Error
 
   /notifications/limits:
     post:
@@ -260,25 +219,105 @@ paths:
         500:
           description: Internal Server Error
 
-#  /webhook:
-#    post:
-#      summary: Subscribe to Webhook
-#      requestBody:
-#        required: True
-#        content:
-#          application/json:
-#            schema:
-#              type: object
-#              properties:
-#                callbackUrl:
-  #                  type: string
-  #                  format: uri
-  #                  example: https://myserver.com/send/callback/here
-  #              required:
-  #                - callbackUrl
-  #      responses:
-  #        201:
-  #          description: Webhook created
+  /notifications/time:
+    put:
+      summary: Add Code or Time to notification List
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          explode: true
+          schema:
+            $ref: '#/components/schemas/UserId'
+        - name: code
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/CoinCode'
+        - name: time
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/Time'
+      responses:
+        200:
+          description: Notification created successfully
+        400:
+          description: Missing required field(s) in request query
+        404:
+          description: User not found
+        500:
+          description: Internal Server Error
+    get:
+      summary: Get List of Code & Time
+      description: set getCode or getTime to true to get list of subscribed codes / times
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/UserId'
+        - name: getCode
+          description: Returning list of code or not
+          in: query
+          required: false
+          schema:
+            type: boolean
+            example: true
+        - name: getTime
+          description: Return list of time or not
+          in: query
+          required: false
+          schema:
+            type: boolean
+            example: true
+      responses:
+        200:
+          description: Get Notification successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  codeList:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CoinCode'
+                  timeList:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Time'
+        400:
+          description: Bad Request
+        404:
+          description: User or Code not found
+        500:
+          description: Internal Server Error
+    delete:
+      summary: Delete value(s) from codeList or timeList. Both param can be called at the same time.
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/UserId'
+        - name: code
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/CoinCode'
+        - name: time
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/Time'
+      responses:
+        200:
+          description: Remove Limit Notification successfully
+        404:
+          description: User or Limit not found
+        500:
+          description: Internal Server Error
 
   /webhook/create:
     post:
@@ -299,6 +338,18 @@ paths:
 
         newLimitMsg:
           '{$request.body#/callbackUrl}/limits':
+            post:
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/WebhookLimitMsg'
+              responses:
+                200:
+                  description: Request accepted
+        newTimeMsg:
+          '{$request.body#/callbackUrl}/times':
             post:
               requestBody:
                 required: true
@@ -356,6 +407,12 @@ components:
       type: string
       description: Coin's own code
       example: "ETH"
+
+    Time:
+      type: string
+      description: Time to send Notification (Time Notification)
+      pattern: '^\d{1,2}:\d{2}(AM|PM)$'
+      example: "5:30PM"
 
     Coin:
       type: object
@@ -419,3 +476,27 @@ components:
           $ref: '#/components/schemas/UserId'
         limit:
           $ref: '#/components/schemas/Limit'
+
+
+    WebhookTimeCoin:
+      type: object
+      properties:
+        code:
+          description: Coin's code
+          $ref: '#/components/schemas/CoinCode'
+        rate:
+          description: Coin's rate
+          type: number
+          example: 3210.04
+
+    WebhookTimeMsg:
+      type: object
+      properties:
+        id:
+          description: The ID of User, in Telegram or Messenger
+          type: string
+          example: "1972606077"
+        coins:
+          type: array
+          items:
+            $ref: '#/components/schemas/WebhookTimeCoin'

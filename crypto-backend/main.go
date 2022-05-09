@@ -5,6 +5,7 @@ import (
 	"crypto-backend/db"
 	"crypto-backend/handlers"
 	"crypto-backend/utils"
+	"crypto-backend/webhook"
 	"log"
 	"net/http"
 	"os"
@@ -31,8 +32,6 @@ func main() {
 	// Start goroutine of fetching crypto
 	go handlers.FetchCrypto(config, coinUpdatedChan)
 
-	go handlers.CheckForLimitPassing(coinUpdatedChan)
-
 	// Setup router
 	router := mux.NewRouter()
 	router.HandleFunc("/status", handlers.StatusHandler).Methods("GET")
@@ -53,7 +52,7 @@ func main() {
 	router.HandleFunc("/notifications/limits", handlers.DeleteLimitHandler).Methods("DELETE")
 
 	// Timer Notification routes
-	router.HandleFunc("/notifications/time", handlers.PostTimerHandler).Methods("POST")
+	router.HandleFunc("/notifications/time", handlers.PutTimerHandler).Methods("PUT")
 	router.HandleFunc("/notifications/time", handlers.GetTimerHandler).Methods("GET")
 	router.HandleFunc("/notifications/time", handlers.DeleteTimerHandler).Methods("DELETE")
 
@@ -81,13 +80,23 @@ func main() {
 	termChan := make(chan os.Signal)
 	signal.Notify(termChan, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGINT)
 
+	timeTermChan := make(chan bool)
+
 	go func() {
 		<-termChan
 		log.Println("Stopping server")
+		timeTermChan <- true
 		if err := server.Shutdown(context.TODO()); err != nil {
 			log.Fatalf("Can't shutdown server, %v", err)
 		}
 	}()
+
+	// Start webhook threads
+	webhookURL := new(webhook.URL)
+	handlers.GlobalURL = webhookURL
+
+	go webhook.LimitThread(coinUpdatedChan, webhookURL)
+	go webhook.TimeThread(webhookURL, timeTermChan)
 
 	if err := server.ListenAndServe(); err != nil {
 		if err.Error() != "http: Server closed" {
