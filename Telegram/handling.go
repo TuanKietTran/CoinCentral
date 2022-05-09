@@ -16,10 +16,6 @@ type Coin struct {
 	price   float32
 }
 
-//Getting start:
-//1.List all availablle bitcoins
-//2.List all followed bitcoins
-//3.List help command
 const list_bitcoins_command = "List bitcoins"
 const list_followed_bitcoins_command = "List followed bitcoins"
 const help_command = "help_command"
@@ -82,6 +78,7 @@ func main() {
 
 	updates := bot.GetUpdatesChan(u)
 
+	//Sample code sending to user:
 	//5043456646
 	// msg := tgbotapi.NewMessage(5043456646, "Hello world")
 	// bot.Send(msg)
