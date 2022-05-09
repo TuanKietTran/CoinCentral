@@ -7,12 +7,13 @@ import (
 	"crypto-backend/utils"
 	"encoding/json"
 	"fmt"
-	"go.mongodb.org/mongo-driver/bson"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func FetchCrypto(config *utils.Config) {
@@ -60,6 +61,9 @@ func fetchRankAndInsert(config *utils.Config, apiKey string) {
 	if err != nil {
 		log.Panicf("Can't fetch Live Coin Watch response, %v", err)
 	}
+
+	fmt.Print(resp)
+	fmt.Print("\n\n")
 
 	var coinList []models.Coin
 	if err = json.NewDecoder(resp.Body).Decode(&coinList); err != nil {
