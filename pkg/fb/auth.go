@@ -59,7 +59,7 @@ func signBody(body []byte) []byte {
 	h := hmac.New(sha1.New, []byte(appSecret))
 	h.Reset()
 	h.Write(body)
-	log.Println("signBody", h.Sum(nil))
+	// log.Println("signBody", h.Sum(nil))
 	return h.Sum(nil)
 }
 
@@ -70,6 +70,6 @@ func isValidSignature(signature string, body []byte) (bool, error) {
 		return false, fmt.Errorf("decode string: %w", err)
 	}
 	log.Println("----------------------------")
-	log.Println("actualBody", actualSign)
+	// log.Println("actualBody", actualSign)
 	return hmac.Equal(signBody(body), actualSign), nil
 }

@@ -5,7 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
+	"regexp"
+	"strconv"
 
 	// "io"
 	// "github.com/joho/godotenv"
@@ -18,9 +19,9 @@ import (
 // Facebook credentials. It's better to store it in your secret storage.
 
 var (
-	verifyToken = os.Getenv("VERIFY_TOKEN")
-	appSecret   = os.Getenv("APP_SECRET")
-	accessToken = os.Getenv("ACCESS_TOKEN")
+	verifyToken = "random-verify-token"
+	appSecret   = "e6ae4f98eb032dfccafe7f77a7d39591"
+	accessToken = "EAAPSXID9D9gBACWQrgTkZCCxmi2ZBowDYOJev7dqeVJWQrI8T3DGgLepqFdi8V9f60zJPmzuSrsZBNDLYg1AOzoae2uH9hbi3yCZApkHIYDNsu3GaPK8wIMjlWIeGfKEcXnuE6DjzmbmbsCXiBSIWZByJUj3bDDrcIK9GZCvz6Oh98jUKFUJT8dDM2Tt3GzTctZCmh1iOfzdwZDZD"
 )
 
 // errors
@@ -28,6 +29,10 @@ var (
 	errUnknownWebHookObject = errors.New("unknown web hook object")
 	errNoMessageEntry       = errors.New("there is no message entry")
 )
+
+var coinListTemp = []string{"Ethereum", "Bitcoin", "Spy"}
+
+var userList UserMapIDKey
 
 // HandleMessenger handles all incoming webhooks from Facebook Messenger.
 func HandleMessenger(w http.ResponseWriter, r *http.Request) {
@@ -116,12 +121,23 @@ func handleWebHookRequestEntry(we WebHookRequestEntry) error {
 	}
 
 	em := we.Messaging[0]
+	log.Println("-------------Messaing = ", em)
+	log.Println("-------------Senderid = ", em.Sender.ID)
+	log.Println("---------Recipient = ", em.Recipient.ID)
 
-	// message action
+	if em.Postback != nil {
+
+	}
 	if em.Message != nil {
-		err := handleMessage(em.Sender.ID, em.Message.Text)
-		if err != nil {
-			return fmt.Errorf("handle message: %w", err)
+		// err := handleMessage(em.Sender.ID, em.Message.Text)
+		// if err != nil {
+		// 	return fmt.Errorf("handle message: %w", err)
+		// }
+		if em.Sender.ID != "111411174878132" {
+			err := handleMessage(em.Sender.ID, em.Message.Text)
+			if err != nil {
+				return fmt.Errorf("handle message: %w", err)
+			}
 		}
 	}
 
@@ -133,14 +149,57 @@ func handleMessage(recipientID, msgText string) error {
 	fmt.Printf("handle Message step has recipientID = %s \n", recipientID)
 
 	var responseText string
-	switch msgText {
-	case "hello":
-		responseText = "world"
+	// switch msgText {
+	// case "hello":
+	// 	responseText = "world"
 	// @TODO your custom cases
-	// map (recipientid, int[] bound, state)
-	default:
-		responseText = "What can I do for you?"
+	log.Printf("user text = %v", msgText)
+	if recipientID == "111411174878132" {
+		log.Println("<><><><><><><>")
 	}
 
+	if msgText == "GET ALL COINS" {
+		var buttons AttachmentButtons
+		for i := 0; i < len(coinListTemp); i++ {
+			b := AttachmentButton{
+				Type:    "postback",
+				Title:   coinListTemp[i],
+				Payload: coinListTemp[i],
+			}
+			buttons = append(buttons, b)
+		}
+		return popUpAllCoinButtons(context.TODO(), recipientID, buttons)
+	} else if strings.Contains(msgText, "mins") {
+		//80hours10mins
+		re, _ := regexp.Compile("(.*)hours(.*)mins")
+		submatch := re.FindSubmatch([]byte(msgText))
+		for _, v := range submatch {
+			log.Println(string(v))
+		}
+		hour, _ := strconv.Atoi(string(submatch[1]))
+		min, _ := strconv.Atoi(string(submatch[2]))
+
+		log.Println("Hour = ", hour)
+		sum := hour*60 + min
+		log.Println(sum)
+
+		responseText = "set time successfully"
+	} else if strings.Contains(msgText, "upper") {
+		//80hours10mins
+		re, _ := regexp.Compile("upper(.*)lower(.*)")
+		submatch := re.FindSubmatch([]byte(msgText))
+		for _, v := range submatch {
+			log.Println(string(v))
+		}
+		upper, _ := strconv.Atoi(string(submatch[1]))
+		lower, _ := strconv.Atoi(string(submatch[2]))
+		setBounds(userList[recipientID], "ETHEREUM", lower, upper)
+		log.Println(">>>>>>>>>>>> ", userList[recipientID])
+		// set upper and lower at the same time
+
+		responseText = "set time successfully"
+	} else {
+		responseText = "What can I do for you?"
+	}
 	return Respond(context.TODO(), recipientID, responseText)
 }
