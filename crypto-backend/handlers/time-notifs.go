@@ -99,7 +99,7 @@ func GetTimerHandler(writer http.ResponseWriter, req *http.Request) {
 	utils.LogSuccess(req)
 }
 
-func PostTimerHandler(writer http.ResponseWriter, req *http.Request) {
+func PutTimerHandler(writer http.ResponseWriter, req *http.Request) {
 	writer.Header().Set("Content-Type", "application/json")
 
 	userId, err := utils.GetUserId(req)
@@ -114,10 +114,11 @@ func PostTimerHandler(writer http.ResponseWriter, req *http.Request) {
 	}
 
 	insertFields := bson.M{}
+	var parseTime time.Time
 
 	newTime := req.URL.Query().Get("time")
 	if newTime != "" {
-		parseTime, err := time.Parse(time.Kitchen, newTime)
+		parseTime, err = time.Parse(time.Kitchen, newTime)
 		if err != nil {
 			writer.WriteHeader(http.StatusBadRequest)
 			utils.LogBadRequest(req, err)
@@ -146,7 +147,11 @@ func PostTimerHandler(writer http.ResponseWriter, req *http.Request) {
 		writer.WriteHeader(http.StatusInternalServerError)
 		utils.LogInternalError(req, updateResult.Err())
 	} else {
+		writer.WriteHeader(http.StatusOK)
 		utils.LogSuccess(req)
+		if !time.Time.IsZero(parseTime) {
+			utils.TimeUpdateChan <- utils.TimeUpdateMsg{Type: utils.Insert, UserId: userId, Time: parseTime}
+		}
 	}
 }
 
@@ -165,10 +170,11 @@ func DeleteTimerHandler(writer http.ResponseWriter, req *http.Request) {
 	}
 
 	insertFields := bson.M{}
+	var parseTime time.Time
 
 	newTime := req.URL.Query().Get("time")
 	if newTime != "" {
-		parseTime, err := time.Parse(time.Kitchen, newTime)
+		parseTime, err = time.Parse(time.Kitchen, newTime)
 		if err != nil {
 			writer.WriteHeader(http.StatusBadRequest)
 			utils.LogBadRequest(req, err)
@@ -198,6 +204,10 @@ func DeleteTimerHandler(writer http.ResponseWriter, req *http.Request) {
 		writer.WriteHeader(http.StatusInternalServerError)
 		utils.LogInternalError(req, updateResult.Err())
 	} else {
+		writer.WriteHeader(http.StatusOK)
 		utils.LogSuccess(req)
+		if !time.Time.IsZero(parseTime) {
+			utils.TimeUpdateChan <- utils.TimeUpdateMsg{Type: utils.Delete, UserId: userId, Time: parseTime}
+		}
 	}
 }
