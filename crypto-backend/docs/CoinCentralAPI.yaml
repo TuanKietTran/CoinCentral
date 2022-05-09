@@ -7,6 +7,8 @@ info:
 servers:
   - url: http://localhost
     description: Development server
+  - url: https://coin-central-backend.herokuapp.com/
+    description: Deployment backend server
 
 paths:
   /status:
@@ -356,7 +358,7 @@ paths:
                 content:
                   application/json:
                     schema:
-                      $ref: '#/components/schemas/WebhookLimitMsg'
+                      $ref: '#/components/schemas/WebhookTimeMsg'
               responses:
                 200:
                   description: Request accepted
@@ -482,7 +484,6 @@ components:
       type: object
       properties:
         code:
-          description: Coin's code
           $ref: '#/components/schemas/CoinCode'
         rate:
           description: Coin's rate

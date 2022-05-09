@@ -104,6 +104,10 @@ func handleUserIdList(url *URL, userIdList *list.List, ctx context.Context) {
 	now := time.Now()
 	filterList := make([]interface{}, userIdList.Len())
 
+	if userIdList.Len() == 0 {
+		return
+	}
+
 	index := 0
 	for elm := userIdList.Front(); elm != nil; elm = elm.Next() {
 		userId := elm.Value.(models.UserId)
