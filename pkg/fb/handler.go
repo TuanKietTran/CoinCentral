@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"regexp"
 	"strconv"
 
@@ -18,10 +19,16 @@ import (
 
 // Facebook credentials. It's better to store it in your secret storage.
 
+// var (
+// 	verifyToken = "random-verify-token"
+// 	appSecret   = "e6ae4f98eb032dfccafe7f77a7d39591"
+// 	accessToken = "EAAPSXID9D9gBACWQrgTkZCCxmi2ZBowDYOJev7dqeVJWQrI8T3DGgLepqFdi8V9f60zJPmzuSrsZBNDLYg1AOzoae2uH9hbi3yCZApkHIYDNsu3GaPK8wIMjlWIeGfKEcXnuE6DjzmbmbsCXiBSIWZByJUj3bDDrcIK9GZCvz6Oh98jUKFUJT8dDM2Tt3GzTctZCmh1iOfzdwZDZD"
+// )
+
 var (
-	verifyToken = "random-verify-token"
-	appSecret   = "e6ae4f98eb032dfccafe7f77a7d39591"
-	accessToken = "EAAPSXID9D9gBACWQrgTkZCCxmi2ZBowDYOJev7dqeVJWQrI8T3DGgLepqFdi8V9f60zJPmzuSrsZBNDLYg1AOzoae2uH9hbi3yCZApkHIYDNsu3GaPK8wIMjlWIeGfKEcXnuE6DjzmbmbsCXiBSIWZByJUj3bDDrcIK9GZCvz6Oh98jUKFUJT8dDM2Tt3GzTctZCmh1iOfzdwZDZD"
+	verifyToken = os.Getenv("VERIFY_TOKEN")
+	appSecret   = os.Getenv("APP_SECRET")
+	accessToken = os.Getenv("ACCESS_TOKEN")
 )
 
 // errors
@@ -36,6 +43,7 @@ var userList UserMapIDKey
 
 // HandleMessenger handles all incoming webhooks from Facebook Messenger.
 func HandleMessenger(w http.ResponseWriter, r *http.Request) {
+	log.Println("---- VERIFY TOKEN = ", verifyToken)
 	if r.Method == http.MethodGet {
 		HandleVerification(w, r)
 		return
@@ -126,7 +134,7 @@ func handleWebHookRequestEntry(we WebHookRequestEntry) error {
 	log.Println("---------Recipient = ", em.Recipient.ID)
 
 	if em.Postback != nil {
-
+		log.Println("<POSTBACK     POSTBACK>")
 	}
 	if em.Message != nil {
 		// err := handleMessage(em.Sender.ID, em.Message.Text)
@@ -193,8 +201,8 @@ func handleMessage(recipientID, msgText string) error {
 		}
 		upper, _ := strconv.Atoi(string(submatch[1]))
 		lower, _ := strconv.Atoi(string(submatch[2]))
-		setBounds(userList[recipientID], "ETHEREUM", lower, upper)
-		log.Println(">>>>>>>>>>>> ", userList[recipientID])
+		// setBounds(userList[recipientID], "ETHEREUM", lower, upper)
+		log.Println(">>>>>>>>>>>> ", userList[recipientID], "\n", upper, " +++++ ", lower)
 		// set upper and lower at the same time
 
 		responseText = "set time successfully"

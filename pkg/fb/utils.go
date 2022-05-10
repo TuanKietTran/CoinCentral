@@ -12,7 +12,7 @@ func setBounds(userData UserMapIDKey, recipientID string, coinName string, lower
 			entry.Name = coinName
 			userData[recipientID].Data.FollowedCoinList[coinName] = entry
 		} else {
-
+			log.Println("set bound function")
 		}
 	}
 	// if entry, ok := userData.Data.FollowedCoinList[coinName]; ok {
