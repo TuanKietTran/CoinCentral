@@ -144,6 +144,186 @@ func GetCoin(coin_name string) (object.Coin, bool) {
 	return coin, true
 }
 
+func GetFollowCoins(userid string, platform string) ([]string, bool) {
+	api := URL + "notifications/time?" +
+		"id=" + userid +
+		"&platform=" + platform +
+		"&getCode=true" +
+		"&getCode=true" +
+		"&getTime=false"
+
+	resp, err := http.Get(api)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		fmt.Println("Requets error, ", resp.StatusCode)
+		return nil, false
+	}
+
+	bodyBytes, _ := ioutil.ReadAll(resp.Body)
+	if len(bodyBytes) == 0 {
+		fmt.Println("Body is empty, Coins may not exists!")
+		return nil, false
+	}
+
+	var results = map[string][]string{
+		"codeList": []string{},
+		"timeList": []string{},
+	}
+	fmt.Println(">>", string(bodyBytes))
+	err = json.Unmarshal(bodyBytes, &results)
+	if err != nil {
+		fmt.Println("Error when API try to convert string to json!")
+		return nil, false
+	}
+	fmt.Println(results["codeList"])
+
+	return results["codeList"], true
+}
+
+func SetFollowCoin(user object.User, coin_code string) bool {
+	//TODO: Check format time
+	api := URL + "notifications/time?" +
+		"id=" + user.Id +
+		"&platform=" + user.Platform +
+		"&code=" + coin_code
+
+	client := &http.Client{}
+
+	// set the HTTP method, url, and request body
+	req, err := http.NewRequest(http.MethodPut, api, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	// set the request header Content-Type for json
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+
+	if resp.StatusCode == 200 {
+		return true
+	}
+	return false
+}
+
+func DeleteFollowCoin(user object.User, coin_code string) bool {
+	//TODO: Check format time
+	api := URL + "notifications/time?" +
+		"id=" + user.Id +
+		"&platform=" + user.Platform +
+		"&code=" + coin_code
+
+	client := &http.Client{}
+	// set the HTTP method, url, and request body
+	req, err := http.NewRequest("DELETE", api, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	// set the request header Content-Type for json
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+
+	if resp.StatusCode == 200 {
+		return true
+	}
+	return false
+}
+
+func SetTime(user object.User, time string) bool {
+	//TODO: Check format time
+	api := URL + "notifications/time?" +
+		"id=" + user.Id +
+		"&platform=" + user.Platform +
+		"&time=" + time
+
+	client := &http.Client{}
+
+	// set the HTTP method, url, and request body
+	req, err := http.NewRequest(http.MethodPut, api, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	// set the request header Content-Type for json
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+
+	if resp.StatusCode == 200 {
+		return true
+	}
+	return false
+}
+
+func DeleteTime(user object.User, time string) bool {
+	//TODO: Check format time
+	api := URL + "notifications/time?" +
+		"id=" + user.Id +
+		"&platform=" + user.Platform +
+		"&time=" + time
+
+	client := &http.Client{}
+	// set the HTTP method, url, and request body
+	req, err := http.NewRequest("DELETE", api, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	// set the request header Content-Type for json
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+
+	if resp.StatusCode == 200 {
+		return true
+	}
+	return false
+}
+
+func GetTime(userid string, platform string) ([]string, bool) {
+	api := URL + "notifications/time?" +
+		"id=" + userid +
+		"&platform=" + platform +
+		"&getCode=false" +
+		"&getTime=true"
+	resp, err := http.Get(api)
+	if err != nil {
+		log.Fatal(err)
+		return []string{}, false
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		fmt.Println("Requets error, ", resp.StatusCode)
+		return []string{}, false
+	}
+
+	bodyBytes, _ := ioutil.ReadAll(resp.Body)
+	if len(bodyBytes) == 0 {
+		fmt.Println("Body is empty, Coins may not exists!")
+		return []string{}, false
+	}
+
+	var times []string
+	err = json.Unmarshal(bodyBytes, &times)
+	if err != nil {
+		fmt.Println("Error when API try to convert string to json!")
+		return []string{}, false
+	}
+
+	return times, true
+}
+
 func SetLimit(user object.User, limit object.Limit) bool {
 	//NEED TO CHECK
 	api := URL + "notifications/limits" + "?id=" + user.Id + "&platform=" + user.Platform
@@ -229,7 +409,7 @@ func GetLimit(user object.User, coin_code string, isUpper bool) ([]object.Limit,
 	return limits, true
 }
 
-func createWebhookRequest(request object.WebhookRequest) bool {
+func CreateWebhookRequest(request object.WebhookRequest) bool {
 	//Done, require Webhook client to turn on.
 	api := URL + "webhook/create"
 	jsonReq, err := json.Marshal(&request)
