@@ -493,10 +493,8 @@ components:
     WebhookTimeMsg:
       type: object
       properties:
-        id:
-          description: The ID of User, in Telegram or Messenger
-          type: string
-          example: "1972606077"
+        userId:
+          $ref: '#/components/schemas/UserId'
         coins:
           type: array
           items:
