@@ -14,8 +14,8 @@ import (
 )
 
 type limitMsg struct {
-	UserId string       `json:"userId"`
-	Limit  models.Limit `json:"limit"`
+	UserId models.UserId `json:"userId"`
+	Limit  models.Limit  `json:"limit"`
 }
 
 func LimitThread(coinUpdatedChan chan bool, url *URL) {
@@ -55,8 +55,12 @@ func checkLimits(url *URL) {
 					if limit.IsUpper && db.CoinHashMap[limit.Code] > limit.Rate ||
 						!limit.IsUpper && db.CoinHashMap[limit.Code] < limit.Rate {
 						limit.Rate = db.CoinHashMap[limit.Code]
-						limitMsg := limitMsg{UserId: user.Id, Limit: limit}
-						go sendLimitMessage(limitMsg, &url.TelegramBotConnected, url.TelegramCallbackUrl)
+						go sendLimitMessage(
+							limitMsg{
+								UserId: models.UserId{
+									Id:       user.Id,
+									Platform: user.Platform}, Limit: limit},
+							&url.TelegramBotConnected, url.TelegramCallbackUrl)
 
 						sendMsgCounter += 1
 					}
@@ -69,11 +73,14 @@ func checkLimits(url *URL) {
 				for _, limit := range user.LimitList {
 					if limit.IsUpper && db.CoinHashMap[limit.Code] > limit.Rate {
 						limit.Rate = db.CoinHashMap[limit.Code]
-						limitMsg := limitMsg{UserId: user.Id, Limit: limit}
-						go sendLimitMessage(limitMsg, &url.TelegramBotConnected, url.MessengerCallbackUrl)
+						go sendLimitMessage(
+							limitMsg{
+								UserId: models.UserId{
+									Id:       user.Id,
+									Platform: user.Platform}, Limit: limit},
+							&url.MessengerBotConnected, url.MessengerCallbackUrl)
 
 						sendMsgCounter += 1
-
 					}
 				}
 			}
