@@ -21,7 +21,7 @@ type simplifyCoin struct {
 }
 
 type timeMsg struct {
-	UserId string         `json:"userId"`
+	UserId models.UserId  `json:"userId"`
 	Coins  []simplifyCoin `json:"coins"`
 }
 
@@ -150,9 +150,10 @@ func handleUserIdList(url *URL, userIdList *list.List, ctx context.Context) {
 			}
 
 			sendTimeMessage(timeMsg{
-				UserId: user.Id,
-				Coins:  coinList,
-			}, &url.TelegramBotConnected, url.TelegramCallbackUrl)
+				UserId: models.UserId{
+					Id:       user.Id,
+					Platform: user.Platform},
+				Coins: coinList}, &url.TelegramBotConnected, url.TelegramCallbackUrl)
 			msgCounter++
 		} else if user.Platform == "messenger" && url.MessengerBotConnected {
 			coinList := make([]simplifyCoin, len(user.CodeList))
@@ -164,9 +165,10 @@ func handleUserIdList(url *URL, userIdList *list.List, ctx context.Context) {
 			}
 
 			sendTimeMessage(timeMsg{
-				UserId: user.Id,
-				Coins:  coinList,
-			}, &url.MessengerBotConnected, url.MessengerCallbackUrl)
+				UserId: models.UserId{
+					Id:       user.Id,
+					Platform: user.Platform},
+				Coins: coinList}, &url.MessengerBotConnected, url.MessengerCallbackUrl)
 			msgCounter++
 		} else {
 			log.Printf("Unknown platform %v for user with ID %v", user.Platform, user.Id)
