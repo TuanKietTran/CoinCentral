@@ -1,5 +1,6 @@
 module crypto-backend
 
+// +heroku goVersion 1.18
 go 1.18
 
 require (
