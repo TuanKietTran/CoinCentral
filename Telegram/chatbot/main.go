@@ -21,7 +21,7 @@ const (
 	STEP3 = 3
 	STEP4 = 4
 	STEP5 = 5
-	URL   = "https://9f89-14-169-108-130.ap.ngrok.io"
+	URL   = "https://a4f5-1-53-234-113.ap.ngrok.io"
 	PORT  = ":8089"
 )
 
@@ -142,7 +142,10 @@ var limitMsgPostBacker = func(limitMsg object.WebhookLimitMsg) {
 
 var timeMsgPostBacker = func(timeMsg object.WebhookTimeMsg) {
 	if bot != nil {
-		userid := timeMsg.UserId
+		user := timeMsg.User
+		platform := user["platform"]
+		userid := user["id"]
+		fmt.Println("platform ", platform, " userid: ", userid)
 		coins := timeMsg.Coins
 
 		var reply string
@@ -153,7 +156,7 @@ var timeMsgPostBacker = func(timeMsg object.WebhookTimeMsg) {
 		}
 
 		fmt.Println(reply)
-
+		fmt.Println("userid", userid)
 		id, err := strconv.ParseInt(userid, 10, 64)
 		if err != nil {
 			panic(err)

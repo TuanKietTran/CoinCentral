@@ -36,8 +36,8 @@ type WebhookTimeCoin struct {
 }
 
 type WebhookTimeMsg struct {
-	UserId string            `json:"id"`
-	Coins  []WebhookTimeCoin `json:"coins"`
+	User  map[string]string `json:"userId"`
+	Coins []WebhookTimeCoin `json:"coins"`
 }
 
 type State struct {
