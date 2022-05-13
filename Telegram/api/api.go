@@ -314,12 +314,18 @@ func GetTime(userid string, platform string) ([]string, bool) {
 		return []string{}, false
 	}
 
-	var times []string
-	err = json.Unmarshal(bodyBytes, &times)
+	var results = map[string][]string{
+		"codeList": []string{},
+		"timeList": []string{},
+	}
+	fmt.Println(">>", string(bodyBytes))
+	err = json.Unmarshal(bodyBytes, &results)
 	if err != nil {
 		fmt.Println("Error when API try to convert string to json!")
-		return []string{}, false
+		return nil, false
 	}
+	fmt.Println(results["timeList"])
+	times := results["timeList"]
 
 	return times, true
 }
@@ -328,6 +334,8 @@ func SetLimit(user object.User, limit object.Limit) bool {
 	//NEED TO CHECK
 	api := URL + "notifications/limits" + "?id=" + user.Id + "&platform=" + user.Platform
 	jsonReq, err := json.Marshal(&limit)
+	fmt.Println("api", api)
+	fmt.Println("json", jsonReq)
 	if err != nil {
 		panic("Limit object cannot parse to json")
 	}

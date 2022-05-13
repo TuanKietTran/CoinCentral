@@ -21,7 +21,7 @@ const (
 	STEP3 = 3
 	STEP4 = 4
 	STEP5 = 5
-	URL   = "https://e4b2-101-99-33-24.ap.ngrok.io"
+	URL   = "https://9f89-14-169-108-130.ap.ngrok.io"
 	PORT  = ":8089"
 )
 
@@ -30,7 +30,6 @@ var bot *tgbotapi.BotAPI
 var err error
 var user_state_list (map[string](object.State))
 var coins []object.Coin
-var follow_coins []object.Coin
 
 // COMMAND LIST
 const (
@@ -41,6 +40,8 @@ const (
 	UNFOLLOW_COIN_ACTION    = "UNFOLLOW"
 	FOLLOW_COIN_ACTION      = "FOLLOW"
 	SELECT_COIN_ACTION      = "SELECT"
+	TIME_ADD                = "TIME_ADD"
+	ADD_TIME                = "ADD TIME"
 	RETURN                  = "RETURN"
 	EDIT                    = "EDIT"
 	UPPER                   = "UPPER"
@@ -58,6 +59,9 @@ var gettingStartKeyBoard = tgbotapi.NewInlineKeyboardMarkup(
 	),
 	tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData(LIST_ALL_FOLLOWED_COINS, LIST_ALL_FOLLOWED_COINS),
+	),
+	tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData(TIME, TIME),
 	),
 	tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData(HELP, HELP),
@@ -245,7 +249,7 @@ func get_response(user object.User, msg string) (string, tgbotapi.InlineKeyboard
 		add_states(chatid, LIST_ALL_COINS)
 		response = "Which bitcoin you want to follow\n"
 		//Only return non-folow coins
-		unfollow_coins := get_list_unfollow_coins(coins, follow_coins)
+		unfollow_coins := get_list_unfollow_coins(coins, user_state_list[chatid].Coins)
 		if len(unfollow_coins) == 0 {
 			response = "You have follow all bitcoins we haved!"
 			isUsedKeyBoard = false
@@ -266,6 +270,7 @@ func get_response(user object.User, msg string) (string, tgbotapi.InlineKeyboard
 		break
 	case TIME:
 		add_states(chatid, TIME)
+		response = "Press button that you want to edit time!"
 		keyboard = getTimeKeyBoard(user_state_list[chatid].Times, EDIT_TIME)
 		isUsedKeyBoard = true
 		break
@@ -284,9 +289,10 @@ func get_response(user object.User, msg string) (string, tgbotapi.InlineKeyboard
 	case UNFOLLOW_COIN_ACTION: //STEP 4.1 (FOLLOW STEP 3 RIGHT ABOVE)
 		//Get coin_code:
 		var coin_code string
-		for _, state := range user_state_list[chatid].Step {
+		for i, state := range user_state_list[chatid].Step {
 			if strings.Contains(state, SELECT_COIN_ACTION) {
 				coin_code = state[len(SELECT_COIN_ACTION):]
+				remove_follow_coin_at(chatid, i)
 				break
 			}
 		}
@@ -318,6 +324,17 @@ func get_response(user object.User, msg string) (string, tgbotapi.InlineKeyboard
 		isUsedKeyBoard = true
 		keyboard = gettingStartKeyBoard
 		break
+	case TIME_ADD:
+		if len(user_state_list[chatid].Times) < 5 {
+			add_states(chatid, TIME_ADD)
+			isUsedKeyBoard = false
+			response = "Please type: ADD TIME 00:00AM for ADD time"
+		} else {
+			response = "You can only set 5 times!"
+			keyboard = getTimeKeyBoard(user_state_list[chatid].Times, EDIT_TIME)
+			isUsedKeyBoard = true
+		}
+		break
 	default:
 		if strings.Contains(msg, SELECT_COIN_ACTION) { //STEP 2: FOR BOTH LIST ALL AND FOLLWED COINS
 			add_states(chatid, msg)                   //Save ACTION + COIN CODE
@@ -348,15 +365,15 @@ func get_response(user object.User, msg string) (string, tgbotapi.InlineKeyboard
 				if strings.Contains(upper_state, SELECT_COIN_ACTION) {
 					coin_code = state[len(SELECT_COIN_ACTION):]
 				}
-				if strings.Contains(upper_state, UPPER) {
-					//Eliminate space:
-					pre_state := strings.ReplaceAll(state, " ", "")
-					upper, _ = strconv.ParseFloat(pre_state[len(UPPER):], 64)
-				}
+				//Eliminate space:
 			}
+			pre_state := strings.ReplaceAll(msg, " ", "")
+			upper, _ = strconv.ParseFloat(pre_state[(len(EDIT)+len(UPPER)):], 64)
+			fmt.Println("Upper: ", upper)
 			keyboard = gettingStartKeyBoard
 			isUsedKeyBoard = true
 			reset_states(chatid)
+
 			//SAVE NEW LIMIT UPPER BOUND
 			limit := object.Limit{coin_code, true, upper}
 			success := api.UpdateLimit(user, limit)
@@ -366,8 +383,6 @@ func get_response(user object.User, msg string) (string, tgbotapi.InlineKeyboard
 				response = "Update limit, retry latter"
 			}
 		} else if strings.Contains(msg, EDIT) && strings.Contains(msg, LOWER) {
-			keyboard = gettingStartKeyBoard
-			isUsedKeyBoard = true
 			var coin_code string
 			var lower float64
 			for _, state := range user_state_list[chatid].Step {
@@ -375,13 +390,14 @@ func get_response(user object.User, msg string) (string, tgbotapi.InlineKeyboard
 				if strings.Contains(upper_state, SELECT_COIN_ACTION) {
 					coin_code = state[len(SELECT_COIN_ACTION):]
 				}
-				if strings.Contains(upper_state, LOWER) {
-					//Eliminate space:
-					pre_state := strings.ReplaceAll(state, " ", "")
-					lower, _ = strconv.ParseFloat(pre_state[len(UPPER):], 64)
-				}
 			}
+			pre_state := strings.ReplaceAll(msg, " ", "")
+			lower, _ = strconv.ParseFloat(pre_state[(len(EDIT)+len(LOWER)):], 64)
+			fmt.Println("Lower: ", lower)
+			keyboard = gettingStartKeyBoard
+			isUsedKeyBoard = true
 			reset_states(chatid)
+
 			//TODO:: SAVE NEW LIMIT  LOWER BOUND
 			limit := object.Limit{coin_code, false, lower}
 			success := api.UpdateLimit(user, limit)
@@ -409,12 +425,10 @@ func get_response(user object.User, msg string) (string, tgbotapi.InlineKeyboard
 					pre_state := strings.ReplaceAll(state, " ", "")
 					upper, _ = strconv.ParseFloat(pre_state[len(UPPER):], 64)
 				}
-				if strings.Contains(upper_state, LOWER) {
-					//Eliminate space:
-					pre_state := strings.ReplaceAll(state, " ", "")
-					lower, _ = strconv.ParseFloat(pre_state[len(LOWER):], 64)
-				}
 			}
+			//Eliminate space:
+			pre_state := strings.ReplaceAll(msg, " ", "")
+			lower, _ = strconv.ParseFloat(pre_state[len(LOWER):], 64)
 			success := api.SetFollowCoin(user, coin_code)
 			if !success {
 				response = "System can not register coin for user!"
@@ -429,18 +443,22 @@ func get_response(user object.User, msg string) (string, tgbotapi.InlineKeyboard
 				} else {
 					response = "Following success!"
 				}
-			}
-			for _, coin := range coins {
-				if coin.Code == coin_code {
-					entry, _ := user_state_list[chatid]
-					entry.Coins = append(entry.Coins, coin)
-					user_state_list[chatid] = entry
+				//Add selected coin for current user cache
+				for _, coin := range coins {
+					if coin.Code == coin_code {
+						entry, _ := user_state_list[chatid]
+						entry.Coins = append(entry.Coins, coin)
+						user_state_list[chatid] = entry
+						break
+					}
 				}
 			}
+
 			keyboard = gettingStartKeyBoard
 			reset_states(chatid)
 			isUsedKeyBoard = true
 		} else if strings.Contains(msg, EDIT_TIME) {
+			add_states(chatid, msg)
 			response = "Command: UPDATE TIME 00:00AM for update time"
 			isUsedKeyBoard = false
 		} else if strings.Contains(msg, UPDATE_TIME) {
@@ -449,21 +467,48 @@ func get_response(user object.User, msg string) (string, tgbotapi.InlineKeyboard
 			for _, state := range user_state_list[chatid].Step {
 				state = strings.ToUpper(state)
 				if strings.Contains(state, EDIT_TIME) {
-					index, _ = strconv.ParseInt(state[len(EDIT_TIME):], 10, 64)
-				}
-				if strings.Contains(state, UPDATE_TIME) {
-					pre_state := strings.ReplaceAll(state, " ", "")
-					time = pre_state[len(UPDATE_TIME):]
+					index, _ = strconv.ParseInt(state[len(EDIT_TIME):], 10, 32)
 				}
 			}
-			old_time := user_state_list[chatid].Times[index]
-			api.DeleteTime(user, old_time)
-			user_state_list[chatid].Times[index] = time
-			response = "Update successful!"
+			pre_state := strings.ReplaceAll(msg, " ", "")
+			time = pre_state[(len(UPDATE_TIME) - 1):]
+
+			fmt.Println("idx ", index)
+			fmt.Println("Time ", time)
+			if index < int64(len(user_state_list[chatid].Times)) {
+				old_time := user_state_list[chatid].Times[index]
+				api.DeleteTime(user, old_time)
+				user_state_list[chatid].Times[index] = time
+			}
+			success := api.SetTime(user, time)
+			if success {
+				response = "Update successful!"
+			} else {
+				response = "Update fail!"
+			}
 			isUsedKeyBoard = true
 			keyboard = gettingStartKeyBoard
 			reset_states(chatid)
 
+		} else if strings.Contains(msg, ADD_TIME) {
+			pre_state := strings.ReplaceAll(msg, " ", "")
+			time := pre_state[(len(ADD_TIME) - 1):]
+			fmt.Println("time: ", time)
+			success := api.SetTime(user, time)
+			if success {
+				response = "Update successful!"
+			} else {
+				response = "Update fail!"
+			}
+
+			if entry, ok := user_state_list[chatid]; ok {
+				entry.Times = append(entry.Times, time)
+				user_state_list[chatid] = entry
+			}
+
+			isUsedKeyBoard = true
+			keyboard = gettingStartKeyBoard
+			reset_states(chatid)
 		}
 	}
 	fmt.Println("=============================")
@@ -481,6 +526,7 @@ func get_list_unfollow_coins(full_list []object.Coin,
 	var coins []object.Coin
 	var isfollow bool
 	for _, coin := range full_list {
+		isfollow = false
 		for _, follow_coin := range follow_list {
 			if coin.Code == follow_coin.Code {
 				isfollow = true
@@ -549,6 +595,13 @@ func reset_states(key string) {
 	}
 }
 
+func remove_follow_coin_at(key string, i int) {
+	if entry, ok := user_state_list[key]; ok {
+		entry.Step = append(entry.Step[:i], entry.Step[i+1:]...)
+		user_state_list[key] = entry
+	}
+}
+
 //WEB HOOK CLIENT
 func handling_http(bot *tgbotapi.BotAPI) {
 	//Sending url for webhook: Only for ngrok
@@ -574,10 +627,13 @@ func getTimeKeyBoard(times []string, command string) tgbotapi.InlineKeyboardMark
 				time, command+time))
 		keyrows = append(keyrows, keybuttons)
 	}
-	command_buttons := tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Return", "\\start"),
+	add_buttons := tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("ADD TIME", TIME_ADD),
 	)
-	keyrows = append(keyrows, command_buttons)
+	return_buttons := tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData(RETURN, RETURN),
+	)
+	keyrows = append(keyrows, add_buttons, return_buttons)
 	return tgbotapi.NewInlineKeyboardMarkup(
 		keyrows...)
 }
