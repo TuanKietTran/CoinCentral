@@ -1,30 +1,5 @@
 package api
 
-// type UserMapIDKey = map[string]UserData
-// type CoinMapNameKey = map[string]CoinData
-
-// type (
-// 	UserData struct {
-// 		State string //full, pend
-// 		Data  RequestData
-// 	}
-
-// 	RequestData struct {
-// 		FollowedCoinList CoinMapNameKey
-// 		TimeInterval     int //mins
-// 	}
-
-// 	CoinData struct {
-// 		Name       string
-// 		Upperbound int
-// 		Lowerbound int
-// 	}
-// )
-
-//STEP 2: LIST ALL COINS , FOLLOW COINS, CURRENT <TIME>, HELP COMMAND
-//STEP 3: FOLLOW, RETURN TO START
-//
-// sender_id: [GET ALL COINS","<coin name>", "<upper>", "<lower>", "<time>", "END"]
 type UserRequest = map[string]([]string)
 
 type User struct {

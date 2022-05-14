@@ -16,5 +16,3 @@ require (
 )
 
 replace golang-messenger-chatbot/api => ./api
-
-replace golang-messenger-chatbot/util => ./util
