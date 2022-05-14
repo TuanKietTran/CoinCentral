@@ -39,12 +39,12 @@ func Respond(ctx context.Context, recipientID, msgText string) error {
 	})
 }
 
-func popUpAllCoinButtons(ctx context.Context, recipientID string, buttons AttachmentButtons) error {
+func popUpAllCoinButtons(ctx context.Context, textPostback string, recipientID string, buttons AttachmentButtons) error {
 	att := Attachment{
 		Type: "template",
 		Payload: AttachmentPayload{
 			TemplateType: "button",
-			Text:         "Get all coins",
+			Text:         textPostback,
 			Buttons:      buttons,
 		},
 	}
