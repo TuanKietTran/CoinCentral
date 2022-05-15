@@ -15,6 +15,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // LatestCoins List of the latest rates
@@ -76,9 +78,17 @@ func fetchRankAndInsert(config *utils.Config, apiKey string) {
 		log.Panicf("Can't fetch Live Coin Watch response, %v", err)
 	}
 
+<<<<<<< HEAD
+	fmt.Print(resp)
+	fmt.Print("\n\n")
+
+	var coinList []models.Coin
+	if err = json.NewDecoder(resp.Body).Decode(&coinList); err != nil {
+=======
 	// Parsed response's body
 	var updatedCoins models.CoinList
 	if err = json.NewDecoder(resp.Body).Decode(&updatedCoins); err != nil {
+>>>>>>> 88f578307d4baf9247f5eea6dda99a7c4cc5df52
 		log.Panicf("Can't parse Live Coin Watch result, %v", err)
 	}
 
