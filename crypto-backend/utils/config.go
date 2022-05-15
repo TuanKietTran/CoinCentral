@@ -7,10 +7,6 @@ import (
 )
 
 type Config struct {
-	MongoDB struct {
-		URI string `yaml:"uri"`
-	} `yaml:"mongoDB"`
-
 	Coins struct {
 		NumOfSupportingCoins int `yaml:"numOfSupportingCoins"`
 		NumOfFetchCoin       int `yaml:"numOfFetchCoin"`

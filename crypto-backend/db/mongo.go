@@ -6,16 +6,16 @@ import (
 	"crypto-backend/utils"
 	"encoding/json"
 	"fmt"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
-	"io"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
 var MongoClient *mongo.Client
@@ -24,65 +24,99 @@ var CryptoDB *mongo.Database
 var UsersCollection *mongo.Collection
 var CoinsCollection *mongo.Collection
 
-var err error // Share error
-var mongoCtx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
+var CoinHashMap map[string]float64
 
-func StartMongoClient(config *utils.Config, generateCollection bool) {
+var err error // Share error
+
+func StartMongoClient(config *utils.Config) {
 	/*
-		This function start Client connected to MongoDB
+		This function start Client which connects to MongoDB
 		If generateCollection == true, also generate the required collections. Default is false
 	*/
 	mongoUri, mongoUriExists := os.LookupEnv("MONGO_URI")
 	if !mongoUriExists {
 		log.Panicf("$MONGO_URI not exists")
 	}
-	MongoClient, err = mongo.Connect(mongoCtx, options.Client().ApplyURI(mongoUri))
+
+	var ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	MongoClient, err = mongo.Connect(ctx, options.Client().ApplyURI(mongoUri))
 	if err != nil {
 		log.Fatalf("Can't connect to MongoDB, %v", err)
 	}
 
 	// Check if Client has been connected correctly
-	if err = MongoClient.Ping(mongoCtx, readpref.Primary()); err != nil {
-		panic(err)
+	if err = MongoClient.Ping(ctx, readpref.Primary()); err != nil {
+		log.Panicf("Can't ping MongoDB server, err: %v", err)
 	}
 
-	CryptoDB = MongoClient.Database("crypto-db")
+	dbName, dbExists := os.LookupEnv("DB")
+	if !dbExists {
+		dbName = "crypto-db"
+	}
+	CryptoDB = MongoClient.Database(dbName)
 
 	// Get collection pointers
-	if generateCollection == true {
-		GenerateCollections(config)
-	}
-
 	UsersCollection = CryptoDB.Collection("Users")
 	CoinsCollection = CryptoDB.Collection("Coins")
+
+	createUserIndex()
+
+	// Check if Coins collection has been generated with enough coins
+	numOfCoins, err := CoinsCollection.CountDocuments(ctx, bson.D{})
+	if err != nil {
+		log.Panicf("Can't get number of Coins, err: %v", err)
+	}
+
+	if int(numOfCoins) != config.Coins.NumOfSupportingCoins {
+		if err = CoinsCollection.Drop(ctx); err != nil {
+			log.Panicf("Can't recreate Coins collection, err: %v", err)
+		}
+
+		initCoinsCollection(config)
+	}
 }
 
 func StopMongoClient() {
 	log.Println("Closing MongoDB client")
-	cancel()
-	if err := MongoClient.Disconnect(mongoCtx); err != nil {
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := MongoClient.Disconnect(ctx); err != nil {
 		log.Fatalf("Can't close MongoDB connection, %v", err)
 	}
 }
 
-func GenerateCollections(config *utils.Config) {
+func createUserIndex() {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	indexList, err := UsersCollection.Indexes().ListSpecifications(ctx)
+	if err != nil {
+		log.Panicf("Can't read User collection indexes, err: %v", err)
+	}
+
+	for _, index := range indexList {
+		if index.Name == "idIndex" {
+			// Index exists, stop function
+			return
+		}
+	}
+
+	idIndex := mongo.IndexModel{
+		Keys:    bson.D{{"id", 1}, {"platform", 1}},
+		Options: options.Index().SetName("idIndex"),
+	}
+
+	if _, err = UsersCollection.Indexes().CreateOne(ctx, idIndex); err != nil {
+		log.Panicf("Can't create userId Index for User collection, err: %v", err)
+	}
+}
+
+func initCoinsCollection(config *utils.Config) {
 	/*
 		This function is used to generate the collections that our project needs
 	*/
-	listOfCollection, err := CryptoDB.ListCollectionNames(mongoCtx, bson.D{})
-	if err != nil {
-		log.Panicf("Can't get list of collection names, %v", err)
-	}
-
-	requireCollections := []string{"Users", "Coins"}
-
-	for _, collection := range requireCollections {
-		if !contain(listOfCollection, collection) {
-			if err = CryptoDB.CreateCollection(mongoCtx, collection); err != nil {
-				log.Panicf("Can't create collection '%s', %v", collection, err)
-			}
-		}
-	}
 
 	// Create simple context
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -92,34 +126,21 @@ func GenerateCollections(config *utils.Config) {
 	codeIndexModel := mongo.IndexModel{Keys: bson.D{{"code", 1}},
 		Options: options.Index().SetName("codeIndex").SetUnique(true)}
 
-	coinCollectionIndex := CryptoDB.Collection("Coins").Indexes()
-	indexName, err := coinCollectionIndex.CreateOne(ctx, codeIndexModel)
-	if err != nil {
-		log.Panicf("Can't create index for `code`, %v", err)
+	if _, err := CryptoDB.Collection("Coins").Indexes().CreateOne(ctx, codeIndexModel); err != nil {
+		log.Panicf("Can't create index for `code`, err: %v", err)
 	}
-	log.Printf("%s created", indexName)
+	log.Println("codeIndex created")
 
 	// Fill Coins collection with values
-	if !contain(listOfCollection, "Coins") {
-		initCoinsCollection(config)
-	}
+	fillCoinsCollection(config)
 }
 
-func contain(stringList []string, item string) bool {
-	// Check if a list contains a string
-	for _, val := range stringList {
-		if val == item {
-			return true
-		}
-	}
-	return false
-}
-
-func initCoinsCollection(config *utils.Config) {
+func fillCoinsCollection(config *utils.Config) {
 	/*
 		Init Coin Collection with coins. These coins will be our supported coins
 	*/
 	log.Println("Initializing Coins collection")
+	now := time.Now()
 
 	// Get $APIKEY
 	apiKey, apiExists := os.LookupEnv("APIKEY")
@@ -144,30 +165,53 @@ func initCoinsCollection(config *utils.Config) {
 	req.Header.Add("x-api-key", apiKey)
 
 	resp, err := utils.HttpClient.Do(req)
+	defer utils.CloseResponseBody(resp)
 	if err != nil {
-		log.Panicf("Can't send resquest, %v", err)
+		log.Panicf("Can't send resquest, err: %v", err)
 	}
 
-	firstRespBody, err := io.ReadAll(resp.Body)
+	// Parse response's body
+	var coinList []models.Coin
+	if err = json.NewDecoder(resp.Body).Decode(&coinList); err != nil {
+		log.Panicf("Can't parse response, err: %v", err)
+	}
+
+	// Create an array of interface for `InsertMany`
+	coinsInterface := make([]interface{}, len(coinList))
+	for index, coin := range coinList {
+		coinsInterface[index] = coin
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if _, err = CoinsCollection.InsertMany(ctx, coinsInterface); err != nil {
+		log.Panicf("Can't insert coins into collection, err: %v", err)
+	}
+
+	log.Printf("Finished init Coins collection, time took: %v", time.Since(now))
+}
+
+func CreateCoinHashMap() map[string]float64 {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	cursor, err := CoinsCollection.Find(ctx, bson.D{})
 	if err != nil {
-		log.Panicf("Can't read response body, %v", err)
+		log.Panicf("Can't connect to Coin collection, err: %v", err)
 	}
 
-	// Closing response connection
-	if err = resp.Body.Close(); err != nil {
-		log.Printf("Can't close response connection, just skipping, %v\n", err)
-	}
-
-	var listOfCoins []models.Coin
-	if err = json.Unmarshal(firstRespBody, &listOfCoins); err != nil {
-		log.Panicf("Can't parse response, %v", err)
-	}
-
-	for _, coin := range listOfCoins {
-		if _, err = CryptoDB.Collection("Coins").InsertOne(mongoCtx, coin); err != nil {
-			log.Panicf("Can't insert coin %s into collection, %v", coin.Code, err)
+	coinMap := make(map[string]float64)
+	var coin models.Coin
+	for cursor.Next(ctx) {
+		if err = cursor.Decode(&coin); err != nil {
+			log.Panicf("Can't parsed result coin, err: %v", err)
 		}
+
+		coinMap[coin.Code] = coin.Rate
 	}
 
-	log.Println("Finished init Coins collection")
+	if err = cursor.Close(ctx); err != nil {
+		log.Printf("Can't close cursor for fetching limit")
+	}
+	return coinMap
 }

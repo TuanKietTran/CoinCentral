@@ -2,11 +2,13 @@ openapi: 3.0.0
 info:
   title: CoinCentral API
   description: blah blah
-  version: 0.0.1
+  version: 0.0.2
 
 servers:
   - url: http://localhost
     description: Development server
+  - url: https://coin-central-backend.herokuapp.com/
+    description: Deployment backend server
 
 paths:
   /status:
@@ -14,7 +16,7 @@ paths:
       summary: Allow client to test for connection
       responses:
         200:
-          description: Connect succesfully
+          description: Connect successfully
         default:
           description: An error has occurred
 
@@ -23,14 +25,13 @@ paths:
       summary: Get list of supported Coin or Coin's info
       responses:
         200:
-          description: Fetch supported list succesfully
+          description: Fetch supported list successfully
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  type: string
-                  example: "ETH"
+                  $ref: '#/components/schemas/CoinCode'
         500:
           description: Internal Server Error
 
@@ -40,6 +41,7 @@ paths:
       parameters:
         - name: code
           in: path
+          required: true
           schema:
             type: string
             example: "ETH"
@@ -64,36 +66,19 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  description: Name of User
-                  example: John Doe
+              $ref: '#/components/schemas/User'
       responses:
-        200:
+        201:
           description: Create user successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  userId:
-                    type: string
-                    format: uuid
-                    example: 705e4dcb-3ecd-24f3-3a35-3e926e4bded5
         400:
           description: Missing `name` in request query
-
-  /users/{userId}:
     get:
       summary: Get User's info
       parameters:
         - name: userId
-          in: path
+          in: query
           schema:
-            type: string
-            format: uuid
+            $ref: '#/components/schemas/UserId'
       responses:
         200:
           description: Fetch User info successfully
@@ -102,7 +87,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
         400:
-          description: Missing `userId` in request path
+          description: Missing field(s) in request query
         404:
           description: User not found
         500:
@@ -111,101 +96,331 @@ paths:
       summary: Delete an existing user
       parameters:
         - name: userId
-          in: path
+          in: query
+          required: true
           schema:
-            type: string
-            format: uuid
+            $ref: '#/components/schemas/UserId'
       responses:
         200:
           description: Delete user successfully
         400:
-          description: Missing `userId` in request query
+          description: Missing field(s) in request query
         404:
-          description: Can't find user with `userId`
+          description: User not found
         500:
           description: Internal Server Error
 
-  /users/{userId}/notifications/time:
+  /notifications/limits:
     post:
-      summary: Create new Notification for User
+      summary: Create a new Limit Notification
       parameters:
-        - name: duration
+        - name: userId
           in: query
+          required: true
           schema:
-            type: string
-            description: Time between Notification
-            example: 2h45m
+            $ref: '#/components/schemas/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Limit'
       responses:
         200:
-          description: Create Notification successfully
+          description: Notification created successfully
+        400:
+          description: Missing field(s) in request query
+        404:
+          description: User not found
+        500:
+          description: Internal Server Error
+    put:
+      summary: Modify an existing Limit Notification
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Limit'
+      responses:
+        200:
+          description: Notification updated successfully
+        400:
+          description: Missing field(s) in request query
+        404:
+          description: User or Limit not found
         500:
           description: Internal Server Error
     get:
-      summary: Get all User's created Notifications
+      summary: Get info of Limit Notification
+      description: "If `code` exists, return info of that specific Limit Notification.
+      Otherwise return all Limit Notification that user `userId` has."
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/UserId'
+        - name: code
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/CoinCode'
+        - name: isUpper
+          description: Whether that limit is an upper or a lower one. Must be specify if `code` is not empty
+          in: query
+          required: false
+          schema:
+            type: boolean
+            example: true
       responses:
         200:
-          description: Get list of Notifications successfully
+          description: Get Notification successfully
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Notification'
+                  $ref: '#/components/schemas/Limit'
+        400:
+          description: Bad Request - isUpper is not set when `code` is set
+        404:
+          description: User or Code not found
+        500:
+          description: Internal Server Error
     delete:
-      summary: Remove Notification
+      summary: Delete a Limit Notification
       parameters:
-        - name: id
+        - name: userId
           in: query
+          required: true
           schema:
-            type: string
-            description: Notification's ID
-            example: 624fae88e627f3fb347f3445
+            $ref: '#/components/schemas/UserId'
+        - name: code
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/CoinCode'
+        - name: isUpper
+          in: query
+          required: true
+          schema:
+            type: boolean
+            example: true
       responses:
         200:
-          description: Delete Notification successfully
+          description: Delete Limit Notification successfully
         404:
-          description: Notification not found
+          description: User or Limit not found
         500:
           description: Internal Server Error
 
-#  /webhook:
-#    post:
-#      summary: Subscribe to Webhook
-#      requestBody:
-#        required: True
-#        content:
-#          application/json:
-#            schema:
-#              type: object
-#              properties:
-#                callbackUrl:
-#                  type: string
-#                  format: uri
-#                  example: https://myserver.com/send/callback/here
-#              required:
-#                - callbackUrl
-#      responses:
-#        201:
-#          description: Webhook created
+  /notifications/time:
+    put:
+      summary: Add Code or Time to notification List
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          explode: true
+          schema:
+            $ref: '#/components/schemas/UserId'
+        - name: code
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/CoinCode'
+        - name: time
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/Time'
+      responses:
+        200:
+          description: Notification created successfully
+        400:
+          description: Missing required field(s) in request query
+        404:
+          description: User not found
+        500:
+          description: Internal Server Error
+    get:
+      summary: Get List of Code & Time
+      description: set getCode or getTime to true to get list of subscribed codes / times
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/UserId'
+        - name: getCode
+          description: Returning list of code or not
+          in: query
+          required: false
+          schema:
+            type: boolean
+            example: true
+        - name: getTime
+          description: Return list of time or not
+          in: query
+          required: false
+          schema:
+            type: boolean
+            example: true
+      responses:
+        200:
+          description: Get Notification successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  codeList:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CoinCode'
+                  timeList:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Time'
+        400:
+          description: Bad Request
+        404:
+          description: User or Code not found
+        500:
+          description: Internal Server Error
+    delete:
+      summary: Delete value(s) from codeList or timeList. Both param can be called at the same time.
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/UserId'
+        - name: code
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/CoinCode'
+        - name: time
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/Time'
+      responses:
+        200:
+          description: Remove Limit Notification successfully
+        404:
+          description: User or Limit not found
+        500:
+          description: Internal Server Error
+
+  /webhook/create:
+    post:
+      summary: Subscribe to Webhook
+      requestBody:
+        required: True
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookRequest'
+      callbacks:
+        ping:
+          '{$request.body#/callbackUrl}/ping':
+            get:
+              responses:
+                200:
+                  description: pong
+
+        newLimitMsg:
+          '{$request.body#/callbackUrl}/limits':
+            post:
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/WebhookLimitMsg'
+              responses:
+                200:
+                  description: Request accepted
+        newTimeMsg:
+          '{$request.body#/callbackUrl}/times':
+            post:
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/WebhookTimeMsg'
+              responses:
+                200:
+                  description: Request accepted
+      responses:
+        201:
+          description: Webhook created
+        400:
+          description: "Bad request body: wrong callbackUrl or webhook server not running"
+        404:
+          description: Can't connect to bot Webhook server
 
 components:
   schemas:
+    UserId:
+      type: object
+      properties:
+        id:
+          description: The ID of User, in Telegram or Messenger
+          type: string
+          example: "1972606077"
+        platform:
+          description: The platform that the User is using
+          type: string
+          example: telegram
+          enum:
+            - telegram
+            - messenger
+
     User:
       type: object
       properties:
-        userId:
+        id:
+          description: The ID of User, in Telegram or Messenger
           type: string
-          format: uuid
+          example: "1972606077"
+        platform:
+          description: The platform that the User is using
+          type: string
+          example: telegram
+          enum:
+            - telegram
+            - messenger
         name:
           type: string
           example: "John Doe"
+
+    CoinCode:
+      type: string
+      description: Coin's own code
+      example: "ETH"
+
+    Time:
+      type: string
+      description: Time to send Notification (Time Notification)
+      pattern: '^\d{1,2}:\d{2}(AM|PM)$'
+      example: "5:30PM"
+
     Coin:
       type: object
       properties:
         code:
-          type: string
-          description: Coin's own code
-          example: "ETH"
+          $ref: '#/components/schemas/CoinCode'
         name:
           type: string
           description: Coin's name
@@ -215,6 +430,7 @@ components:
           format: double
           description: Coin's price (rate)
           example: 3205.803416110673
+
     Notification:
       type: object
       properties:
@@ -227,4 +443,59 @@ components:
           description: Duration between Notification
           example: 2h45m
 
+    Limit:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Code of Coin
+          example: "ETH"
+        isUpper:
+          type: boolean
+          description: Whether this Limit is an upper or a lower one
+        rate:
+          type: number
+          description: The limit of this Notification
+          example: 3205.01
 
+    WebhookRequest:
+      type: object
+      properties:
+        callbackUrl:
+          type: string
+          format: uri
+          example: https://myserver.com/send/callback/here
+        platform:
+          type: string
+          enum:
+            - telegram
+            - messenger
+
+    WebhookLimitMsg:
+      type: object
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        limit:
+          $ref: '#/components/schemas/Limit'
+
+
+    WebhookTimeCoin:
+      type: object
+      properties:
+        code:
+          $ref: '#/components/schemas/CoinCode'
+        rate:
+          description: Coin's rate
+          type: number
+          example: 3210.04
+
+    WebhookTimeMsg:
+      type: object
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        coins:
+          type: array
+          items:
+            $ref: '#/components/schemas/WebhookTimeCoin'

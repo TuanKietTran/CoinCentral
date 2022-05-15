@@ -7,6 +7,9 @@ import (
 	"crypto-backend/utils"
 	"encoding/json"
 	"fmt"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 	"net/http"
 	"os"
@@ -16,26 +19,43 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func FetchCrypto(config *utils.Config) {
+// LatestCoins List of the latest rates
+var LatestCoins models.CoinList
+
+func FetchCrypto(config *utils.Config, coinUpdatedChan chan bool) {
 	var apiKey, apiExists = os.LookupEnv("APIKEY")
 	if !apiExists {
 		log.Panicln("$APIKEY not exists")
 	}
 
-	fetchRankAndInsert(config, apiKey)
+	// Get list of supported Coins
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	cursor, err := db.CoinsCollection.Find(ctx, bson.D{})
+	if err != nil {
+		log.Panicf("Can't fetch supported Coins from MongoDB, err: %v", err)
+	}
+	cancel()
 
+	if err = cursor.All(ctx, &LatestCoins); err != nil {
+		log.Panicf("Can't parsed list of supported Coins")
+	}
+
+	// Start operation loop
+	fetchRankAndInsert(config, apiKey)
+	coinUpdatedChan <- true
 	ticker := time.NewTicker(time.Duration(config.Coins.TimeBetweenFetch) * time.Second)
 	for {
 		select {
 		case <-ticker.C:
 			fetchRankAndInsert(config, apiKey)
+			coinUpdatedChan <- true
 		}
 	}
-
 }
 
 func fetchRankAndInsert(config *utils.Config, apiKey string) {
 	log.Println("Updating Coins collection")
+	now := time.Now()
 
 	reqPayload := strings.NewReader(fmt.Sprintf(`{
 	"currency": "USD",
@@ -53,42 +73,44 @@ func fetchRankAndInsert(config *utils.Config, apiKey string) {
 	req.Header.Add("x-api-key", apiKey)
 
 	resp, err := utils.HttpClient.Do(req)
-	defer func() {
-		if err = resp.Body.Close(); err != nil {
-			log.Printf("Can't close response body")
-		}
-	}()
+	defer utils.CloseResponseBody(resp)
 	if err != nil {
 		log.Panicf("Can't fetch Live Coin Watch response, %v", err)
 	}
 
+<<<<<<< HEAD
 	fmt.Print(resp)
 	fmt.Print("\n\n")
 
 	var coinList []models.Coin
 	if err = json.NewDecoder(resp.Body).Decode(&coinList); err != nil {
+=======
+	// Parsed response's body
+	var updatedCoins models.CoinList
+	if err = json.NewDecoder(resp.Body).Decode(&updatedCoins); err != nil {
+>>>>>>> 88f578307d4baf9247f5eea6dda99a7c4cc5df52
 		log.Panicf("Can't parse Live Coin Watch result, %v", err)
-
 	}
 
-	// Create context
+	writeModel := make([]mongo.WriteModel, config.Coins.NumOfFetchCoin)
+	for i, coin := range updatedCoins {
+		writeModel[i] = mongo.NewUpdateOneModel().
+			SetFilter(bson.M{"code": coin.Code}).
+			SetUpdate(bson.M{"$set": bson.M{
+				"rate": coin.Rate,
+			}}).
+			SetUpsert(false)
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	counter := 0 // Count how many coins is updated
-	for _, coin := range coinList {
-		filter := bson.D{{"code", coin.Code}}
-		update := bson.D{{"$set", bson.D{{"rate", coin.Rate}}}}
-		result, err := db.CoinsCollection.UpdateOne(ctx, filter, update)
-
-		if err != nil {
-			log.Panicf("Can't update coin: %s, %v", coin.Code, err)
-		}
-
-		if result.MatchedCount != 0 {
-			counter += 1
-		}
+	result, err := db.CoinsCollection.BulkWrite(ctx, writeModel, options.BulkWrite().SetOrdered(false))
+	if err != nil {
+		log.Panicf("Can't update Coins collection, err: %v", err)
 	}
 
-	log.Printf("Finishing update Coins collection, updated %v coins\n", counter)
+	log.Printf("Finished update Coins collection. Updated %v coins. Time took: %v",
+		result.MatchedCount,
+		time.Since(now))
 }

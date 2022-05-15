@@ -155,3 +155,6 @@ Temporary Items
 
 # .env files are also ignored
 .env
+
+# Ignore bin folder
+bin/

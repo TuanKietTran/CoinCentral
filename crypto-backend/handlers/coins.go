@@ -57,7 +57,6 @@ func SupportedCoinsHandler(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	writer.WriteHeader(http.StatusOK)
 	log.Printf("%v %s %v\n", req.Method, req.URL, http.StatusOK)
 }
 

@@ -6,14 +6,8 @@ import (
 	"crypto-backend/models"
 	"crypto-backend/utils"
 	"encoding/json"
-	"errors"
-	"fmt"
-	"log"
 	"net/http"
 	"time"
-
-	"github.com/google/uuid"
-	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -24,16 +18,16 @@ func GetUserHandler(writer http.ResponseWriter, req *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// Get userId from path
-	userId, ok := mux.Vars(req)["userId"]
-	if !ok {
-		utils.LogBadRequest(req, errors.New("missing userId"))
+	// Get userId & platform
+	userId, err := utils.GetUserId(req)
+	if err != nil {
 		writer.WriteHeader(http.StatusBadRequest)
+		utils.LogBadRequest(req, err)
 		return
 	}
 
 	// Search for user with userId
-	cursor, err := collection.Find(ctx, bson.D{{"_id", userId}})
+	cursor, err := collection.Find(ctx, bson.M{"id": userId.Id, "platform": userId.Platform})
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		utils.LogInternalError(req, err)
@@ -80,50 +74,63 @@ func CreateUserHandler(writer http.ResponseWriter, req *http.Request) {
 
 	// Parse body to get User info
 	var newUser models.User
-	reqDecoder := json.NewDecoder(req.Body)
-	err := reqDecoder.Decode(&newUser)
+	err := json.NewDecoder(req.Body).Decode(&newUser)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		utils.LogInternalError(req, err)
 		return
 	}
 
-	newUser.UserId = uuid.NewString()
+	// Check if ID is empty
+	if newUser.Id == "" {
+		writer.WriteHeader(http.StatusBadRequest)
+		utils.LogBadRequest(req)
+		return
+	}
+
+	// Check if platform is correct
+	if newUser.Platform != "telegram" && newUser.Platform != "messenger" {
+		writer.WriteHeader(http.StatusBadRequest)
+		utils.LogBadRequest(req)
+		return
+	}
+
+	// Fields that we must also include
+	newUser.LimitList = []models.Limit{}
+	newUser.CodeList = []string{}
+	newUser.TimeList = []time.Time{}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	// Insert into MongoDB
-	result, err := collection.InsertOne(ctx, newUser)
+	_, err = collection.InsertOne(ctx, newUser)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		utils.LogInternalError(req, err)
-	} else if _, err = writer.Write([]byte(fmt.Sprintf(`{"userId": "%s"}`, result.InsertedID))); err != nil {
-		writer.WriteHeader(http.StatusInternalServerError)
-		utils.LogInternalError(req, err)
 	} else {
-		utils.LogSuccess(req)
+		writer.WriteHeader(http.StatusCreated)
+		utils.LogCreated(req)
 	}
 }
 
 func DeleteUserHandler(writer http.ResponseWriter, req *http.Request) {
-	log.Println("Deleting")
 	writer.Header().Set("Content-Type", "application/json")
 	collection := db.UsersCollection
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// Get userId from path
-	userId, ok := mux.Vars(req)["userId"]
-	if !ok {
-		utils.LogBadRequest(req, errors.New("missing userId"))
+	// Get userId & platform
+	userId, err := utils.GetUserId(req)
+	if err != nil {
 		writer.WriteHeader(http.StatusBadRequest)
+		utils.LogBadRequest(req, err)
 		return
 	}
 
 	// Search for user with userId
-	deleteResult, err := collection.DeleteOne(ctx, bson.D{{"_id", userId}})
+	deleteResult, err := collection.DeleteOne(ctx, bson.M{"id": userId.Id, "platform": userId.Platform})
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		utils.LogInternalError(req, err)

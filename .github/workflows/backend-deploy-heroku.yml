@@ -1,0 +1,18 @@
+name: backend-deploy-heroku
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2.4.2
+      - uses: akhileshNS/heroku-deploy@v3.12.12
+        with:
+          heroku_api_key: ${{secrets.HEROKU_API_KEY}}
+          heroku_app_name: "coin-central-backend"
+          heroku_email: "thuy.nguyenduc02@hcmut.edu.vn"
+          appdir: "crypto-backend"
