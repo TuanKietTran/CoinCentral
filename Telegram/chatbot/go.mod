@@ -6,6 +6,8 @@ replace github.com/TuanKietTran/CoinCentral/api => ../api
 
 replace github.com/TuanKietTran/CoinCentral/object => ../object
 
+replace github.com/TuanKietTran/CoinCentral/webhook => ../webhook
+
 require (
 	github.com/TuanKietTran/CoinCentral/api v0.0.0-00010101000000-000000000000
 	github.com/TuanKietTran/CoinCentral/object v0.0.0-00010101000000-000000000000
