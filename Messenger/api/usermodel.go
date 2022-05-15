@@ -1,4 +1,6 @@
-package object
+package api
+
+type UserRequest = map[string]([]string)
 
 type User struct {
 	Id       string `json:"id"`
@@ -26,22 +28,4 @@ type WebhookRequest struct {
 type WebhookLimitMsg struct {
 	UserId User  `json:"userId"`
 	Limit  Limit `json:"limit"`
-}
-
-//TODO: new object.
-
-type WebhookTimeCoin struct {
-	Code string  `json:"code"`
-	Rate float64 `json:"rate"`
-}
-
-type WebhookTimeMsg struct {
-	User  map[string]string `json:"userId"`
-	Coins []WebhookTimeCoin `json:"coins"`
-}
-
-type State struct {
-	Step  []string
-	Coins []Coin
-	Times []string
 }

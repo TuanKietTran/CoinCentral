@@ -9,13 +9,11 @@ import (
 	"net/http"
 	"os"
 	"strings"
-
-	"github.com/TuanKietTran/CoinCentral/object"
 )
 
 const URL = "https://coin-central-backend.herokuapp.com/"
 
-var state = false
+// var state = false
 
 func GetStatus() {
 	//TESTING FUNCTION:
@@ -32,32 +30,32 @@ func GetStatus() {
 	fmt.Println(string(responseData))
 }
 
-func GetUser(userID string, platform string) (object.User, bool) {
+func GetUser(userID string, platform string) (User, bool) {
 	//GET USER: FAIL
 	api := URL + "users" + "?" + "id=" + userID + "&platform=" + platform
 	log.Print("api\n", api, "\n")
 	resp, err := http.Get(api)
 	if err != nil {
 		log.Fatal(err)
-		return object.User{}, false
+		return User{}, false
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return object.User{}, false
+		return User{}, false
 	}
 	bodyBytes, _ := ioutil.ReadAll(resp.Body)
 	if len(bodyBytes) == 0 {
-		return object.User{}, false
+		return User{}, false
 	}
 
 	// Convert response body to string
-	var user object.User
+	var user User
 	json.Unmarshal(bodyBytes, &user)
 	return user, true
 }
 
-func CreateUser(user object.User) bool {
+func CreateUser(user User) bool {
 	//CREATE USER: DONE
 	jsonReq, _ := json.Marshal(&user)
 	resp, err := http.Post(
@@ -114,7 +112,7 @@ func GetAllCoins() []string {
 	return coinArray
 }
 
-func GetCoin(coin_name string) (object.Coin, bool) {
+func GetCoin(coin_name string) (Coin, bool) {
 	//GET COIN: DONE
 	api := URL + "coins/" + coin_name
 	fmt.Println(api)
@@ -125,20 +123,20 @@ func GetCoin(coin_name string) (object.Coin, bool) {
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		fmt.Println("Requets error, ", resp.StatusCode)
-		return object.Coin{}, false
+		return Coin{}, false
 	}
 
 	bodyBytes, _ := ioutil.ReadAll(resp.Body)
 	if len(bodyBytes) == 0 {
 		fmt.Println("Body is empty, Coins may not exists!")
-		return object.Coin{}, false
+		return Coin{}, false
 	}
 
-	var coin object.Coin
+	var coin Coin
 	err = json.Unmarshal(bodyBytes, &coin)
 	if err != nil {
 		fmt.Println("Error when API try to convert string to json!")
-		return object.Coin{}, false
+		return Coin{}, false
 	}
 
 	return coin, true
@@ -184,7 +182,7 @@ func GetFollowCoins(userid string, platform string) ([]string, bool) {
 	return results["codeList"], true
 }
 
-func SetFollowCoin(user object.User, coin_code string) bool {
+func SetFollowCoin(user User, coin_code string) bool {
 	//TODO: Check format time
 	api := URL + "notifications/time?" +
 		"id=" + user.Id +
@@ -211,7 +209,7 @@ func SetFollowCoin(user object.User, coin_code string) bool {
 	return false
 }
 
-func DeleteFollowCoin(user object.User, coin_code string) bool {
+func DeleteFollowCoin(user User, coin_code string) bool {
 	//TODO: Check format time
 	api := URL + "notifications/time?" +
 		"id=" + user.Id +
@@ -237,7 +235,7 @@ func DeleteFollowCoin(user object.User, coin_code string) bool {
 	return false
 }
 
-func SetTime(user object.User, time string) bool {
+func SetTime(user User, time string) bool {
 	//TODO: Check format time
 	api := URL + "notifications/time?" +
 		"id=" + user.Id +
@@ -264,7 +262,7 @@ func SetTime(user object.User, time string) bool {
 	return false
 }
 
-func DeleteTime(user object.User, time string) bool {
+func DeleteTime(user User, time string) bool {
 	//TODO: Check format time
 	api := URL + "notifications/time?" +
 		"id=" + user.Id +
@@ -330,7 +328,7 @@ func GetTime(userid string, platform string) ([]string, bool) {
 	return times, true
 }
 
-func SetLimit(user object.User, limit object.Limit) bool {
+func SetLimit(user User, limit Limit) bool {
 	//NEED TO CHECK
 	api := URL + "notifications/limits" + "?id=" + user.Id + "&platform=" + user.Platform
 	jsonReq, err := json.Marshal(&limit)
@@ -354,7 +352,7 @@ func SetLimit(user object.User, limit object.Limit) bool {
 	return false
 }
 
-func UpdateLimit(user object.User, limit object.Limit) bool {
+func UpdateLimit(user User, limit Limit) bool {
 	//UPDATE LIMIT : DONE
 	api := URL + "notifications/limits" + "?id=" + user.Id + "&platform=" + user.Platform
 	jsonReq, err := json.Marshal(&limit)
@@ -383,7 +381,7 @@ func UpdateLimit(user object.User, limit object.Limit) bool {
 	return false
 }
 
-func GetLimit(user object.User, coin_code string, isUpper bool) ([]object.Limit, bool) {
+func GetLimit(user User, coin_code string, isUpper bool) ([]Limit, bool) {
 	//GET LIMIT DONE
 	var mode string
 	if isUpper {
@@ -409,7 +407,7 @@ func GetLimit(user object.User, coin_code string, isUpper bool) ([]object.Limit,
 		return nil, false
 	}
 
-	var limits []object.Limit
+	var limits []Limit
 	err = json.Unmarshal(bodyBytes, &limits)
 	if err != nil {
 		panic(err)
@@ -417,7 +415,7 @@ func GetLimit(user object.User, coin_code string, isUpper bool) ([]object.Limit,
 	return limits, true
 }
 
-func CreateWebhookRequest(request object.WebhookRequest) bool {
+func CreateWebhookRequest(request WebhookRequest) bool {
 	//Done, require Webhook client to turn on.
 	api := URL + "webhook/create"
 	jsonReq, err := json.Marshal(&request)
@@ -434,44 +432,3 @@ func CreateWebhookRequest(request object.WebhookRequest) bool {
 	}
 	return false
 }
-
-//func main() {
-//Check server status:
-//getStatus()
-// WEBHOOK
-// request := WebhookRequest{"http://localhost:8080/", "telegram"}
-// success := createWebhookRequest(request)
-// if success {
-// 	//TODO: Do something
-// }
-// USER:
-//user := User{"123456", "telegram", "Justin Nguyen"}
-// success := createUser(user)
-// if success {
-// 	//TODO: Do something
-// }
-// deleteUser("123456", "telegram")
-
-// COINS:
-// coins := getAllCoins()
-// coin, success := getCoin("MANA")
-// if success {
-// 	//TODO: Do something
-// 	fmt.Println(coin)
-// }
-
-// LIMIT:
-// limit := Limit{"MANA", false, 1.3722288665475049}
-// setLimit(user, limit)
-// limits, success := getLimit(user, "MANA", true)
-// if success == true {
-// 	//TODO: Do something.
-// 	fmt.Println(limits)
-// }
-
-// success := updateLimit(user, limit)
-// if success {
-// 	//TODO: Do something
-// 	fmt.Println("Update success")
-// }
-//}
